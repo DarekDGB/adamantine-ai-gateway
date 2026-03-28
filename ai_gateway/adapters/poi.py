@@ -16,9 +16,9 @@ class PoIAdapter(BaseAdapter):
         envelope: Envelope = {
             "contract_version": AI_GATEWAY_ENVELOPE_V1,
             "adapter": self.name,
-            "task_type": source_input["task_type"],
-            "model_family": source_input["model_family"],
-            "input_payload": source_input["input_payload"],
+            "task_type": source_input.get("task_type"),
+            "model_family": source_input.get("model_family"),
+            "input_payload": source_input.get("input_payload"),
         }
         return validate_envelope_v1(envelope)
 
@@ -33,11 +33,7 @@ class PoIAdapter(BaseAdapter):
         accepted = policy_reason is None
         reason_id = policy_reason.value if policy_reason is not None else "ACCEPTED"
 
-        output_payload = (
-            {"status": "accepted-candidate"}
-            if accepted
-            else {}
-        )
+        output_payload = {"status": "accepted-candidate"} if accepted else {}
 
         return {
             "contract_version": AI_GATEWAY_OUTPUT_V1,
