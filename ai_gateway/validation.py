@@ -24,7 +24,7 @@ def validate_envelope_v1(envelope: Any) -> dict:
         raise ValueError("invalid envelope contract_version")
 
     for field in REQUIRED_ENVELOPE_FIELDS:
-        if field not in data:
+        if field not in data or data[field] is None:
             raise ValueError(f"missing required envelope field: {field}")
 
     return data
@@ -38,7 +38,7 @@ def validate_output_v1(output: Any) -> dict:
         raise ValueError("invalid output contract_version")
 
     for field in REQUIRED_OUTPUT_FIELDS:
-        if field not in data:
+        if field not in data or data[field] is None:
             raise ValueError(f"missing required output field: {field}")
 
     accepted = data["accepted"]
