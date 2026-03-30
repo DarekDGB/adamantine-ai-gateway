@@ -1,12 +1,17 @@
 from abc import ABC, abstractmethod
 
-from ai_gateway.types import Envelope, Output
+from ai_gateway.types import Envelope, Manifest, Output
 
 
 class BaseAdapter(ABC):
     @property
     @abstractmethod
     def name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def manifest(self) -> Manifest:
         raise NotImplementedError
 
     @abstractmethod
