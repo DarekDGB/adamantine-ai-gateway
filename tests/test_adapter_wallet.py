@@ -3,7 +3,9 @@ import pytest
 from ai_gateway.adapters.wallet import SUPPORTED_WALLET_ACTIONS, WalletAdapter
 from ai_gateway.contracts.envelope_v1 import AI_GATEWAY_ENVELOPE_V1
 from ai_gateway.contracts.output_v1 import AI_GATEWAY_OUTPUT_V1
+from ai_gateway.errors import AdapterError, ValidationError
 from ai_gateway.gateway import AIGateway
+from ai_gateway.reason_ids import ReasonID
 from ai_gateway.registry import AdapterRegistry
 
 
@@ -59,7 +61,7 @@ def test_wallet_adapter_build_envelope_rejects_unsupported_action() -> None:
     source_input = build_valid_wallet_source_input()
     source_input["action"] = "broadcast_transaction_request"
 
-    with pytest.raises(ValueError, match="unsupported wallet action"):
+    with pytest.raises(AdapterError, match=ReasonID.ADAPTER_VALIDATION_FAILED.value):
         adapter.build_envelope(source_input)
 
 
@@ -68,7 +70,7 @@ def test_wallet_adapter_build_envelope_rejects_missing_required_field() -> None:
     source_input = build_valid_wallet_source_input()
     del source_input["wallet_id"]
 
-    with pytest.raises(ValueError, match="missing required wallet field: wallet_id"):
+    with pytest.raises(ValidationError, match=ReasonID.MISSING_REQUIRED_FIELD.value):
         adapter.build_envelope(source_input)
 
 
@@ -77,7 +79,7 @@ def test_wallet_adapter_build_envelope_rejects_empty_string_field() -> None:
     source_input = build_valid_wallet_source_input()
     source_input["network"] = ""
 
-    with pytest.raises(ValueError, match="wallet field must be a non-empty string: network"):
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
         adapter.build_envelope(source_input)
 
 
@@ -86,7 +88,7 @@ def test_wallet_adapter_build_envelope_rejects_non_dict_request_payload() -> Non
     source_input = build_valid_wallet_source_input()
     source_input["request_payload"] = []
 
-    with pytest.raises(ValueError, match="wallet request_payload must be a dict"):
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
         adapter.build_envelope(source_input)
 
 
@@ -140,8 +142,25 @@ def test_gateway_process_accepts_valid_wallet_request() -> None:
     assert output["output_payload"]["action"] == "build_transaction"
     assert len(output["context_hash"]) == 64
 
+
 def test_wallet_adapter_build_envelope_rejects_non_dict_source_input() -> None:
     adapter = WalletAdapter()
 
-    with pytest.raises(ValueError, match="wallet source_input must be a dict"):
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
         adapter.build_envelope("invalid")  # type: ignore[arg-type]
+
+
+def test_gateway_process_rejects_unsupported_wallet_action_fail_closed() -> None:
+    registry = AdapterRegistry()
+    registry.register("wallet", WalletAdapter())
+    gateway = AIGateway(registry)
+
+    source_input = build_valid_wallet_source_input()
+    source_input["action"] = "broadcast_transaction_request"
+
+    output = gateway.process("wallet", source_input)
+
+    assert output["accepted"] is False
+    assert output["reason_id"] == ReasonID.ADAPTER_VALIDATION_FAILED.value
+    assert output["output_payload"] == {}
+    assert output["context_hash"] == ""
