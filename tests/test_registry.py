@@ -1,5 +1,7 @@
 import pytest
 
+from ai_gateway.errors import AdapterError, ValidationError
+from ai_gateway.reason_ids import ReasonID
 from ai_gateway.registry import AdapterRegistry
 
 
@@ -19,7 +21,7 @@ def test_registry_register_and_get_adapter() -> None:
 def test_registry_rejects_empty_name() -> None:
     registry = AdapterRegistry()
 
-    with pytest.raises(ValueError, match="adapter name must be non-empty"):
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
         registry.register("", DummyAdapter())
 
 
@@ -27,14 +29,14 @@ def test_registry_rejects_duplicate_registration() -> None:
     registry = AdapterRegistry()
     registry.register("poi", DummyAdapter())
 
-    with pytest.raises(ValueError, match="adapter already registered: poi"):
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
         registry.register("poi", DummyAdapter())
 
 
 def test_registry_rejects_unknown_adapter_lookup() -> None:
     registry = AdapterRegistry()
 
-    with pytest.raises(ValueError, match="adapter not registered: poi"):
+    with pytest.raises(AdapterError, match=ReasonID.ADAPTER_NOT_REGISTERED.value):
         registry.get("poi")
 
 
