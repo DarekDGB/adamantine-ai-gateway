@@ -267,3 +267,29 @@ def test_gateway_rejects_unregistered_adapter() -> None:
 
     assert output["accepted"] is False
     assert output["reason_id"] == ReasonID.ADAPTER_NOT_REGISTERED.value
+
+def test_gateway_executes_registry_get_path_before_failure() -> None:
+    from ai_gateway.reason_ids import ReasonID
+
+    class FailingAdapter:
+        @property
+        def name(self) -> str:
+            return "failing-adapter"
+
+        def build_envelope(self, source_input):
+            raise RuntimeError("boom")
+
+        def build_output(self, envelope):
+            raise AssertionError("should not be called")
+
+    registry = AdapterRegistry()
+    registry.register("failing-adapter", FailingAdapter())
+    gateway = AIGateway(registry)
+
+    output = gateway.process(
+        "failing-adapter",
+        {"task_type": "code_review"},
+    )
+
+    assert output["accepted"] is False
+    assert output["reason_id"] == ReasonID.INTERNAL_ERROR.value
