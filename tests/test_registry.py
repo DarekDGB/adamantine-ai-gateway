@@ -10,6 +10,12 @@ class DummyAdapter:
     pass
 
 
+class BadManifestAdapter:
+    @property
+    def manifest(self) -> str:
+        return "not-a-dict"
+
+
 VALID_MANIFEST = {
     "manifest_version": "adapter_manifest_v1",
     "adapter_id": "poi",
@@ -57,6 +63,13 @@ def test_registry_rejects_unknown_adapter_lookup() -> None:
         registry.get("poi")
 
 
+def test_registry_rejects_unknown_manifest_lookup() -> None:
+    registry = AdapterRegistry()
+
+    with pytest.raises(AdapterError, match=ReasonID.ADAPTER_NOT_REGISTERED.value):
+        registry.get_manifest("poi")
+
+
 def test_registry_names_are_sorted() -> None:
     registry = AdapterRegistry()
     registry.register("zeta", DummyAdapter())
@@ -100,3 +113,10 @@ def test_registry_rejects_manifest_lookup_when_adapter_has_no_manifest() -> None
 
     with pytest.raises(AdapterError, match=ReasonID.ADAPTER_VALIDATION_FAILED.value):
         registry.get_manifest("poi")
+
+
+def test_registry_rejects_non_dict_adapter_manifest_attribute() -> None:
+    registry = AdapterRegistry()
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        registry.register("poi", BadManifestAdapter())
