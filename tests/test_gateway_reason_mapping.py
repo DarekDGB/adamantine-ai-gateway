@@ -1,3 +1,4 @@
+from ai_gateway.errors import AdapterError, ContractError, ValidationError
 from ai_gateway.gateway import AIGateway
 from ai_gateway.reason_ids import ReasonID
 from ai_gateway.registry import AdapterRegistry
@@ -9,7 +10,7 @@ class InvalidEnvelopeContractAdapter:
         return "bad-envelope-contract"
 
     def build_envelope(self, source_input: dict) -> dict:
-        raise ValueError("invalid envelope contract_version")
+        raise ContractError(ReasonID.INVALID_ENVELOPE.value)
 
     def build_output(self, envelope: dict) -> dict:
         raise AssertionError("should not be called")
@@ -30,7 +31,7 @@ class InvalidOutputContractAdapter:
         }
 
     def build_output(self, envelope: dict) -> dict:
-        raise ValueError("invalid output contract_version")
+        raise ContractError(ReasonID.INVALID_OUTPUT.value)
 
 
 class MissingOutputFieldAdapter:
@@ -48,7 +49,7 @@ class MissingOutputFieldAdapter:
         }
 
     def build_output(self, envelope: dict) -> dict:
-        raise ValueError("missing required output field: context_hash")
+        raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
 
 
 class NonBoolAcceptedAdapter:
@@ -66,7 +67,7 @@ class NonBoolAcceptedAdapter:
         }
 
     def build_output(self, envelope: dict) -> dict:
-        raise ValueError("accepted must be a bool")
+        raise ContractError(ReasonID.INVALID_OUTPUT.value)
 
 
 class SchemaViolationAdapter:
@@ -75,19 +76,31 @@ class SchemaViolationAdapter:
         return "schema-violation"
 
     def build_envelope(self, source_input: dict) -> dict:
-        raise ValueError("value must be a dict")
+        raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
 
     def build_output(self, envelope: dict) -> dict:
         raise AssertionError("should not be called")
 
 
-class UnknownValueErrorAdapter:
+class UnknownValidationErrorAdapter:
     @property
     def name(self) -> str:
-        return "unknown-value-error"
+        return "unknown-validation-error"
 
     def build_envelope(self, source_input: dict) -> dict:
-        raise ValueError("something unmapped happened")
+        raise ValidationError("something-unmapped")
+
+    def build_output(self, envelope: dict) -> dict:
+        raise AssertionError("should not be called")
+
+
+class UnknownAdapterErrorAdapter:
+    @property
+    def name(self) -> str:
+        return "unknown-adapter-error"
+
+    def build_envelope(self, source_input: dict) -> dict:
+        raise AdapterError("something-unmapped")
 
     def build_output(self, envelope: dict) -> dict:
         raise AssertionError("should not be called")
@@ -163,15 +176,29 @@ def test_gateway_maps_schema_violation_to_schema_violation() -> None:
     assert output["reason_id"] == ReasonID.SCHEMA_VIOLATION.value
 
 
-def test_gateway_maps_unknown_value_error_to_internal_error() -> None:
+def test_gateway_maps_unknown_validation_error_to_schema_violation_default() -> None:
     registry = AdapterRegistry()
-    registry.register("unknown-value-error", UnknownValueErrorAdapter())
+    registry.register("unknown-validation-error", UnknownValidationErrorAdapter())
     gateway = AIGateway(registry)
 
     output = gateway.process(
-        "unknown-value-error",
+        "unknown-validation-error",
         {"task_type": "code_review"},
     )
 
     assert output["accepted"] is False
-    assert output["reason_id"] == ReasonID.INTERNAL_ERROR.value
+    assert output["reason_id"] == ReasonID.SCHEMA_VIOLATION.value
+
+
+def test_gateway_maps_unknown_adapter_error_to_adapter_validation_failed_default() -> None:
+    registry = AdapterRegistry()
+    registry.register("unknown-adapter-error", UnknownAdapterErrorAdapter())
+    gateway = AIGateway(registry)
+
+    output = gateway.process(
+        "unknown-adapter-error",
+        {"task_type": "code_review"},
+    )
+
+    assert output["accepted"] is False
+    assert output["reason_id"] == ReasonID.ADAPTER_VALIDATION_FAILED.value
