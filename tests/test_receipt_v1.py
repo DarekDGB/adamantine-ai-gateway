@@ -59,3 +59,27 @@ def test_validate_receipt_v1_rejects_non_hex_hash() -> None:
 
     with pytest.raises(ContractError, match=ReasonID.INVALID_OUTPUT.value):
         validate_receipt_v1(receipt)
+
+
+def test_validate_receipt_v1_rejects_invalid_receipt_version() -> None:
+    receipt = valid_receipt()
+    receipt["receipt_version"] = "wrong"
+
+    with pytest.raises(ContractError, match=ReasonID.INVALID_OUTPUT.value):
+        validate_receipt_v1(receipt)
+
+
+def test_validate_receipt_v1_rejects_missing_required_field() -> None:
+    receipt = valid_receipt()
+    del receipt["created_from_contract"]
+
+    with pytest.raises(ValidationError, match=ReasonID.MISSING_REQUIRED_FIELD.value):
+        validate_receipt_v1(receipt)
+
+
+def test_validate_receipt_v1_rejects_wrong_created_from_contract() -> None:
+    receipt = valid_receipt()
+    receipt["created_from_contract"] = "wrong_contract"
+
+    with pytest.raises(ContractError, match=ReasonID.INVALID_OUTPUT.value):
+        validate_receipt_v1(receipt)
