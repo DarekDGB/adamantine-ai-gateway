@@ -139,3 +139,9 @@ def test_gateway_process_accepts_valid_wallet_request() -> None:
     assert output["reason_id"] == "ACCEPTED"
     assert output["output_payload"]["action"] == "build_transaction"
     assert len(output["context_hash"]) == 64
+
+def test_wallet_adapter_build_envelope_rejects_non_dict_source_input() -> None:
+    adapter = WalletAdapter()
+
+    with pytest.raises(ValueError, match="wallet source_input must be a dict"):
+        adapter.build_envelope("invalid")  # type: ignore[arg-type]
