@@ -253,3 +253,17 @@ def test_gateway_fail_closed_with_non_dict_source_input_sets_unknown_task_type()
     assert output["accepted"] is False
     assert output["reason_id"] == ReasonID.INTERNAL_ERROR.value
     assert output["task_type"] == "unknown"
+
+def test_gateway_rejects_unregistered_adapter() -> None:
+    from ai_gateway.reason_ids import ReasonID
+
+    registry = AdapterRegistry()
+    gateway = AIGateway(registry)
+
+    output = gateway.process(
+        "not-registered",
+        {"task_type": "code_review"},
+    )
+
+    assert output["accepted"] is False
+    assert output["reason_id"] == ReasonID.ADAPTER_NOT_REGISTERED.value
