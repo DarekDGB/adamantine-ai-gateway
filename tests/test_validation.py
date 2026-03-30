@@ -143,3 +143,43 @@ def test_validate_output_v1_rejects_unknown_field() -> None:
 
     with pytest.raises(ValidationError):
         validate_output_v1(output)
+
+def test_validate_envelope_rejects_float_in_payload() -> None:
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "test",
+        "input_payload": {"value": 1.23},
+    }
+
+    with pytest.raises(ValidationError):
+        validate_envelope_v1(envelope)
+
+
+def test_validate_envelope_rejects_non_string_dict_key() -> None:
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "test",
+        "input_payload": {1: "invalid-key"},
+    }
+
+    with pytest.raises(ValidationError):
+        validate_envelope_v1(envelope)
+
+
+def test_validate_output_rejects_nested_invalid_type() -> None:
+    output = {
+        "contract_version": AI_GATEWAY_OUTPUT_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "accepted": False,
+        "reason_id": "POLICY_DENIED",
+        "output_payload": {"nested": {"value": 1.23}},
+        "context_hash": "abc123",
+    }
+
+    with pytest.raises(ValidationError):
+        validate_output_v1(output)
