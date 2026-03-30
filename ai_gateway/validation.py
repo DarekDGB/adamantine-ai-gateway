@@ -24,6 +24,35 @@ def _reject_unknown_fields(data: dict, allowed_fields: set[str]) -> None:
             raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
 
 
+def _validate_canonical_value(value: Any) -> None:
+    if isinstance(value, (str, int, bool)) or value is None:
+        return
+
+    if isinstance(value, float):
+        raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+
+    if isinstance(value, list):
+        for item in value:
+            _validate_canonical_value(item)
+        return
+
+    if isinstance(value, dict):
+        for key, val in value.items():
+            if not isinstance(key, str):
+                raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+            _validate_canonical_value(val)
+        return
+
+    raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+
+
+def _validate_payload(payload: Any) -> None:
+    if not isinstance(payload, dict):
+        raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+
+    _validate_canonical_value(payload)
+
+
 def validate_envelope_v1(envelope: Any) -> dict:
     data = _require_dict(envelope)
 
@@ -38,6 +67,8 @@ def validate_envelope_v1(envelope: Any) -> dict:
     for field in REQUIRED_ENVELOPE_FIELDS:
         if field not in data or data[field] is None:
             raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
+
+    _validate_payload(data["input_payload"])
 
     return data
 
@@ -59,5 +90,7 @@ def validate_output_v1(output: Any) -> dict:
 
     if not isinstance(data["accepted"], bool):
         raise ContractError(ReasonID.INVALID_OUTPUT.value)
+
+    _validate_payload(data["output_payload"])
 
     return data
