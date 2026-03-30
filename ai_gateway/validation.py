@@ -18,12 +18,22 @@ def _require_dict(value: Any) -> dict:
     return value
 
 
+def _reject_unknown_fields(data: dict, allowed_fields: set[str]) -> None:
+    for key in data:
+        if key not in allowed_fields:
+            raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+
+
 def validate_envelope_v1(envelope: Any) -> dict:
     data = _require_dict(envelope)
 
-    contract_version = data.get("contract_version")
-    if contract_version != AI_GATEWAY_ENVELOPE_V1:
+    if data.get("contract_version") != AI_GATEWAY_ENVELOPE_V1:
         raise ContractError(ReasonID.INVALID_ENVELOPE.value)
+
+    allowed_fields = set(REQUIRED_ENVELOPE_FIELDS)
+    allowed_fields.add("contract_version")
+
+    _reject_unknown_fields(data, allowed_fields)
 
     for field in REQUIRED_ENVELOPE_FIELDS:
         if field not in data or data[field] is None:
@@ -35,16 +45,19 @@ def validate_envelope_v1(envelope: Any) -> dict:
 def validate_output_v1(output: Any) -> dict:
     data = _require_dict(output)
 
-    contract_version = data.get("contract_version")
-    if contract_version != AI_GATEWAY_OUTPUT_V1:
+    if data.get("contract_version") != AI_GATEWAY_OUTPUT_V1:
         raise ContractError(ReasonID.INVALID_OUTPUT.value)
+
+    allowed_fields = set(REQUIRED_OUTPUT_FIELDS)
+    allowed_fields.add("contract_version")
+
+    _reject_unknown_fields(data, allowed_fields)
 
     for field in REQUIRED_OUTPUT_FIELDS:
         if field not in data or data[field] is None:
             raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
 
-    accepted = data["accepted"]
-    if not isinstance(accepted, bool):
+    if not isinstance(data["accepted"], bool):
         raise ContractError(ReasonID.INVALID_OUTPUT.value)
 
     return data
