@@ -1,4 +1,4 @@
-from ai_gateway.errors import AdapterError, ContractError, ValidationError
+from ai_gateway.errors import AdapterError, ContractError, ValidationError, PolicyError
 from ai_gateway.gateway import AIGateway
 from ai_gateway.reason_ids import ReasonID
 from ai_gateway.registry import AdapterRegistry
@@ -106,6 +106,18 @@ class UnknownAdapterErrorAdapter:
         raise AssertionError("should not be called")
 
 
+class PolicyDeniedAdapter:
+    @property
+    def name(self) -> str:
+        return "policy-denied"
+
+    def build_envelope(self, source_input: dict) -> dict:
+        raise PolicyError(ReasonID.POLICY_DENIED.value)
+
+    def build_output(self, envelope: dict) -> dict:
+        raise AssertionError("should not be called")
+
+
 def test_gateway_maps_invalid_envelope_contract_to_invalid_envelope() -> None:
     registry = AdapterRegistry()
     registry.register("bad-envelope-contract", InvalidEnvelopeContractAdapter())
@@ -203,6 +215,21 @@ def test_gateway_maps_unknown_adapter_error_to_adapter_validation_failed_default
     assert output["accepted"] is False
     assert output["reason_id"] == ReasonID.ADAPTER_VALIDATION_FAILED.value
 
+
+def test_gateway_maps_policy_error_to_policy_denied() -> None:
+    registry = AdapterRegistry()
+    registry.register("policy-denied", PolicyDeniedAdapter())
+    gateway = AIGateway(registry)
+
+    output = gateway.process(
+        "policy-denied",
+        {"task_type": "code_review"},
+    )
+
+    assert output["accepted"] is False
+    assert output["reason_id"] == ReasonID.POLICY_DENIED.value
+
+
 class UnexpectedExceptionAdapter:
     @property
     def name(self) -> str:
@@ -216,8 +243,6 @@ class UnexpectedExceptionAdapter:
 
 
 def test_gateway_maps_unexpected_exception_to_internal_error() -> None:
-    from ai_gateway.reason_ids import ReasonID
-
     registry = AdapterRegistry()
     registry.register("unexpected-exception", UnexpectedExceptionAdapter())
     gateway = AIGateway(registry)
@@ -230,9 +255,8 @@ def test_gateway_maps_unexpected_exception_to_internal_error() -> None:
     assert output["accepted"] is False
     assert output["reason_id"] == ReasonID.INTERNAL_ERROR.value
 
-def test_gateway_fail_closed_with_non_dict_source_input_sets_unknown_task_type() -> None:
-    from ai_gateway.reason_ids import ReasonID
 
+def test_gateway_fail_closed_with_non_dict_source_input_sets_unknown_task_type() -> None:
     class BadAdapter:
         @property
         def name(self) -> str:
@@ -254,9 +278,8 @@ def test_gateway_fail_closed_with_non_dict_source_input_sets_unknown_task_type()
     assert output["reason_id"] == ReasonID.INTERNAL_ERROR.value
     assert output["task_type"] == "unknown"
 
-def test_gateway_rejects_unregistered_adapter() -> None:
-    from ai_gateway.reason_ids import ReasonID
 
+def test_gateway_rejects_unregistered_adapter() -> None:
     registry = AdapterRegistry()
     gateway = AIGateway(registry)
 
@@ -268,9 +291,8 @@ def test_gateway_rejects_unregistered_adapter() -> None:
     assert output["accepted"] is False
     assert output["reason_id"] == ReasonID.ADAPTER_NOT_REGISTERED.value
 
-def test_gateway_executes_registry_get_path_before_failure() -> None:
-    from ai_gateway.reason_ids import ReasonID
 
+def test_gateway_executes_registry_get_path_before_failure() -> None:
     class FailingAdapter:
         @property
         def name(self) -> str:
@@ -294,16 +316,14 @@ def test_gateway_executes_registry_get_path_before_failure() -> None:
     assert output["accepted"] is False
     assert output["reason_id"] == ReasonID.INTERNAL_ERROR.value
 
-def test_gateway_reason_id_passthrough_from_error_message() -> None:
-    from ai_gateway.reason_ids import ReasonID
 
+def test_gateway_reason_id_passthrough_from_error_message() -> None:
     class PassthroughAdapter:
         @property
         def name(self) -> str:
             return "passthrough-adapter"
 
         def build_envelope(self, source_input):
-            # This string must match an existing ReasonID value
             raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
 
         def build_output(self, envelope):
