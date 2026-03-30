@@ -115,6 +115,7 @@ def test_validate_output_v1_rejects_non_bool_accepted() -> None:
     with pytest.raises(ContractError, match=ReasonID.INVALID_OUTPUT.value):
         validate_output_v1(output)
 
+
 def test_validate_envelope_v1_rejects_unknown_field() -> None:
     envelope = {
         "contract_version": AI_GATEWAY_ENVELOPE_V1,
@@ -143,6 +144,7 @@ def test_validate_output_v1_rejects_unknown_field() -> None:
 
     with pytest.raises(ValidationError):
         validate_output_v1(output)
+
 
 def test_validate_envelope_rejects_float_in_payload() -> None:
     envelope = {
@@ -183,3 +185,34 @@ def test_validate_output_rejects_nested_invalid_type() -> None:
 
     with pytest.raises(ValidationError):
         validate_output_v1(output)
+
+
+def test_validate_envelope_rejects_unsupported_type_object() -> None:
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "test",
+        "input_payload": {"value": object()},
+    }
+
+    with pytest.raises(ValidationError):
+        validate_envelope_v1(envelope)
+
+
+def test_validate_envelope_rejects_nested_invalid_structure_in_list() -> None:
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "test",
+        "input_payload": {
+            "data": [
+                {"valid": "ok"},
+                {"invalid": object()},
+            ]
+        },
+    }
+
+    with pytest.raises(ValidationError):
+        validate_envelope_v1(envelope)
