@@ -293,3 +293,30 @@ def test_gateway_executes_registry_get_path_before_failure() -> None:
 
     assert output["accepted"] is False
     assert output["reason_id"] == ReasonID.INTERNAL_ERROR.value
+
+def test_gateway_reason_id_passthrough_from_error_message() -> None:
+    from ai_gateway.reason_ids import ReasonID
+
+    class PassthroughAdapter:
+        @property
+        def name(self) -> str:
+            return "passthrough-adapter"
+
+        def build_envelope(self, source_input):
+            # This string must match an existing ReasonID value
+            raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+
+        def build_output(self, envelope):
+            raise AssertionError("should not be called")
+
+    registry = AdapterRegistry()
+    registry.register("passthrough-adapter", PassthroughAdapter())
+    gateway = AIGateway(registry)
+
+    output = gateway.process(
+        "passthrough-adapter",
+        {"task_type": "code_review"},
+    )
+
+    assert output["accepted"] is False
+    assert output["reason_id"] == ReasonID.SCHEMA_VIOLATION.value
