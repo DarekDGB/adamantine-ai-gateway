@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 
 The format follows a simple release log with explicit scope and locked boundary behavior.
 
+## [v0.3.0] - 2026-03-30
+
+### Added
+- Adapter Manifest V1 contract (`ADAPTER_MANIFEST_V1.md`)
+- AI Gateway Receipt V1 contract (`AI_GATEWAY_RECEIPT_V1.md`)
+- Manifest validation enforcing explicit adapter declaration boundaries
+- Receipt validation enforcing deterministic evidence structure
+- Deterministic receipt builder (`build_receipt_v1`)
+- Manifest-aware adapter registry with manifest storage and validation
+- Gateway receipt processing path (`process_with_receipt`)
+- Additional tests for manifest validation, receipt validation, registry behavior, and gateway receipt flow
+
+### Changed
+- Adapter layer extended from implicit behavior to explicit manifest-declared boundaries
+- Registry upgraded from adapter-only storage to manifest-aware control layer
+- Gateway extended to support deterministic evidence generation alongside output processing
+- Validation layer expanded to include manifest and receipt contract enforcement
+- Test suite expanded to cover manifest, receipt, and receipt-aware gateway behavior while maintaining 100% coverage
+
+### Included in this release
+- All functionality from v0.2.0
+- `ADAPTER_MANIFEST_V1`
+- `AI_GATEWAY_RECEIPT_V1`
+- Manifest validation layer
+- Receipt validation layer
+- Deterministic receipt builder
+- Manifest-aware registry
+- Receipt-capable gateway processing path
+- Deterministic evidence generation foundations
+- 100% test coverage enforced
+
+### Release scope
+This release extends the Adamantine AI Gateway from a deterministic validation boundary into a deterministic evidence-producing boundary by introducing adapter manifests, receipt contracts, and receipt-capable gateway processing while preserving fail-closed and contract-first guarantees.
+
+### v0.3.0 principles
+- Untrusted input boundary
+- Fail-closed always
+- Contract-first
+- Deterministic input/output only
+- Strict schema, no unknown fields
+- Canonical-safe payloads only
+- Explicit adapter declaration via manifests
+- Deterministic evidence via receipts
+- Adapters translate, gateway verifies, AdamantineOS decides
+
 ## [v0.2.0] - 2026-03-30
 
 ### Added
