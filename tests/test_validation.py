@@ -114,3 +114,32 @@ def test_validate_output_v1_rejects_non_bool_accepted() -> None:
 
     with pytest.raises(ContractError, match=ReasonID.INVALID_OUTPUT.value):
         validate_output_v1(output)
+
+def test_validate_envelope_v1_rejects_unknown_field() -> None:
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "test",
+        "input_payload": {},
+        "extra_field": "not-allowed",
+    }
+
+    with pytest.raises(ValidationError):
+        validate_envelope_v1(envelope)
+
+
+def test_validate_output_v1_rejects_unknown_field() -> None:
+    output = {
+        "contract_version": AI_GATEWAY_OUTPUT_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "accepted": False,
+        "reason_id": "POLICY_DENIED",
+        "output_payload": {},
+        "context_hash": "abc",
+        "extra_field": "not-allowed",
+    }
+
+    with pytest.raises(ValidationError):
+        validate_output_v1(output)
