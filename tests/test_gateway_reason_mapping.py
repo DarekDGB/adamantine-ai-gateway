@@ -229,3 +229,27 @@ def test_gateway_maps_unexpected_exception_to_internal_error() -> None:
 
     assert output["accepted"] is False
     assert output["reason_id"] == ReasonID.INTERNAL_ERROR.value
+
+def test_gateway_fail_closed_with_non_dict_source_input_sets_unknown_task_type() -> None:
+    from ai_gateway.reason_ids import ReasonID
+
+    class BadAdapter:
+        @property
+        def name(self) -> str:
+            return "bad-adapter"
+
+        def build_envelope(self, source_input):
+            raise RuntimeError("boom")
+
+        def build_output(self, envelope):
+            raise AssertionError("should not be called")
+
+    registry = AdapterRegistry()
+    registry.register("bad-adapter", BadAdapter())
+    gateway = AIGateway(registry)
+
+    output = gateway.process("bad-adapter", "not-a-dict")
+
+    assert output["accepted"] is False
+    assert output["reason_id"] == ReasonID.INTERNAL_ERROR.value
+    assert output["task_type"] == "unknown"
