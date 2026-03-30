@@ -2,6 +2,8 @@ from ai_gateway.adapters.base import BaseAdapter
 from ai_gateway.contracts.envelope_v1 import AI_GATEWAY_ENVELOPE_V1
 from ai_gateway.contracts.output_v1 import AI_GATEWAY_OUTPUT_V1
 from ai_gateway.determinism import context_hash_for_value
+from ai_gateway.errors import AdapterError, ValidationError
+from ai_gateway.reason_ids import ReasonID
 from ai_gateway.types import Envelope, Output
 from ai_gateway.validation import validate_envelope_v1
 
@@ -59,12 +61,12 @@ class WalletAdapter(BaseAdapter):
         payload = self._require_wallet_payload(source_input)
         action = payload["action"]
         if action not in SUPPORTED_WALLET_ACTIONS:
-            raise ValueError(f"unsupported wallet action: {action}")
+            raise AdapterError(ReasonID.ADAPTER_VALIDATION_FAILED.value)
 
     @staticmethod
     def _require_wallet_payload(value: dict) -> dict:
         if not isinstance(value, dict):
-            raise ValueError("wallet source_input must be a dict")
+            raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
 
         required_fields = (
             "wallet_id",
@@ -76,14 +78,14 @@ class WalletAdapter(BaseAdapter):
 
         for field in required_fields:
             if field not in value:
-                raise ValueError(f"missing required wallet field: {field}")
+                raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
 
         for field in ("wallet_id", "network", "asset", "action"):
             field_value = value[field]
             if not isinstance(field_value, str) or not field_value.strip():
-                raise ValueError(f"wallet field must be a non-empty string: {field}")
+                raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
 
         if not isinstance(value["request_payload"], dict):
-            raise ValueError("wallet request_payload must be a dict")
+            raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
 
         return value
