@@ -54,3 +54,43 @@ def test_validate_manifest_v1_rejects_unknown_reason_id() -> None:
 
     with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
         validate_manifest_v1(manifest)
+
+
+def test_validate_manifest_v1_rejects_missing_required_field() -> None:
+    manifest = valid_manifest()
+    del manifest["notes"]
+
+    with pytest.raises(ValidationError, match=ReasonID.MISSING_REQUIRED_FIELD.value):
+        validate_manifest_v1(manifest)
+
+
+def test_validate_manifest_v1_rejects_blank_string_field() -> None:
+    manifest = valid_manifest()
+    manifest["notes"] = "   "
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_manifest_v1(manifest)
+
+
+def test_validate_manifest_v1_rejects_non_list_field() -> None:
+    manifest = valid_manifest()
+    manifest["supported_actions"] = "evaluate_candidate"
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_manifest_v1(manifest)
+
+
+def test_validate_manifest_v1_rejects_duplicate_list_entries() -> None:
+    manifest = valid_manifest()
+    manifest["supported_actions"] = ["evaluate_candidate", "evaluate_candidate"]
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_manifest_v1(manifest)
+
+
+def test_validate_manifest_v1_rejects_wrong_output_contract() -> None:
+    manifest = valid_manifest()
+    manifest["output_contract"] = "wrong_output_contract"
+
+    with pytest.raises(ContractError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_manifest_v1(manifest)
