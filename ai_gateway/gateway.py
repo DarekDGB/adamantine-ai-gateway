@@ -12,38 +12,56 @@ class AIGateway:
     def process(self, adapter_name: str, source_input: dict) -> Output:
         try:
             adapter = self._registry.get(adapter_name)
+        except AdapterError as exc:
+            return self._fail_closed(
+                adapter_name,
+                self._reason_id_from_error(exc, ReasonID.ADAPTER_NOT_REGISTERED),
+                source_input,
+            )
+
+        try:
             envelope = adapter.build_envelope(source_input)
             return adapter.build_output(envelope)
+
         except ValidationError as exc:
             return self._fail_closed(
                 adapter_name,
                 self._reason_id_from_error(exc, ReasonID.SCHEMA_VIOLATION),
                 source_input,
             )
+
         except ContractError as exc:
             return self._fail_closed(
                 adapter_name,
                 self._reason_id_from_error(exc, ReasonID.INVALID_ENVELOPE),
                 source_input,
             )
+
         except PolicyError as exc:
             return self._fail_closed(
                 adapter_name,
                 self._reason_id_from_error(exc, ReasonID.POLICY_DENIED),
                 source_input,
             )
+
         except AdapterError as exc:
             return self._fail_closed(
                 adapter_name,
                 self._reason_id_from_error(exc, ReasonID.ADAPTER_VALIDATION_FAILED),
                 source_input,
             )
+
         except Exception:
-            return self._fail_closed(adapter_name, ReasonID.INTERNAL_ERROR, source_input)
+            return self._fail_closed(
+                adapter_name,
+                ReasonID.INTERNAL_ERROR,
+                source_input,
+            )
 
     @staticmethod
     def _fail_closed(adapter_name: str, reason_id: ReasonID, source_input: object) -> Output:
         task_type = "unknown"
+
         if isinstance(source_input, dict):
             raw_task_type = source_input.get("task_type")
             if isinstance(raw_task_type, str) and raw_task_type:
@@ -62,6 +80,7 @@ class AIGateway:
     @staticmethod
     def _reason_id_from_error(exc: Exception, default_reason: ReasonID) -> ReasonID:
         message = str(exc)
+
         try:
             return ReasonID(message)
         except ValueError:
