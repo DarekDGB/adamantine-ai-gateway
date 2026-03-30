@@ -202,3 +202,30 @@ def test_gateway_maps_unknown_adapter_error_to_adapter_validation_failed_default
 
     assert output["accepted"] is False
     assert output["reason_id"] == ReasonID.ADAPTER_VALIDATION_FAILED.value
+
+class UnexpectedExceptionAdapter:
+    @property
+    def name(self) -> str:
+        return "unexpected-exception"
+
+    def build_envelope(self, source_input: dict) -> dict:
+        raise RuntimeError("boom")
+
+    def build_output(self, envelope: dict) -> dict:
+        raise AssertionError("should not be called")
+
+
+def test_gateway_maps_unexpected_exception_to_internal_error() -> None:
+    from ai_gateway.reason_ids import ReasonID
+
+    registry = AdapterRegistry()
+    registry.register("unexpected-exception", UnexpectedExceptionAdapter())
+    gateway = AIGateway(registry)
+
+    output = gateway.process(
+        "unexpected-exception",
+        {"task_type": "code_review"},
+    )
+
+    assert output["accepted"] is False
+    assert output["reason_id"] == ReasonID.INTERNAL_ERROR.value
