@@ -4,7 +4,14 @@ from ai_gateway.contracts.envelope_v1 import AI_GATEWAY_ENVELOPE_V1
 from ai_gateway.contracts.output_v1 import AI_GATEWAY_OUTPUT_V1
 from ai_gateway.errors import ContractError, ValidationError
 from ai_gateway.reason_ids import ReasonID
-from ai_gateway.validation import validate_envelope_v1, validate_output_v1
+from ai_gateway.validation import (
+    MAX_DEPTH,
+    MAX_KEYS,
+    MAX_LIST_ITEMS,
+    MAX_STRING_LENGTH,
+    validate_envelope_v1,
+    validate_output_v1,
+)
 
 
 def test_validate_envelope_v1_accepts_valid_envelope() -> None:
@@ -217,6 +224,7 @@ def test_validate_envelope_rejects_nested_invalid_structure_in_list() -> None:
     with pytest.raises(ValidationError):
         validate_envelope_v1(envelope)
 
+
 def test_validate_envelope_accepts_valid_list_payload() -> None:
     envelope = {
         "contract_version": AI_GATEWAY_ENVELOPE_V1,
@@ -238,14 +246,103 @@ def test_validate_envelope_accepts_valid_list_payload() -> None:
 
     assert validated == envelope
 
-def test_validate_envelope_rejects_non_dict_input_payload() -> None:
+
+def test_validate_envelope_rejects_payload_exceeding_max_depth() -> None:
+    nested: dict[str, object] = {}
+    current = nested
+    for depth_index in range(MAX_DEPTH + 1):
+        next_level: dict[str, object] = {}
+        current[f"level_{depth_index}"] = next_level
+        current = next_level
+
     envelope = {
         "contract_version": AI_GATEWAY_ENVELOPE_V1,
         "adapter": "poi",
         "task_type": "code_review",
         "model_family": "test",
-        "input_payload": ["not-a-dict"],
+        "input_payload": nested,
     }
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
         validate_envelope_v1(envelope)
+
+
+def test_validate_envelope_rejects_overlong_string_in_payload() -> None:
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "test",
+        "input_payload": {"value": "x" * (MAX_STRING_LENGTH + 1)},
+    }
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_envelope_v1(envelope)
+
+
+def test_validate_envelope_rejects_payload_list_exceeding_max_items() -> None:
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "test",
+        "input_payload": {"items": ["x"] * (MAX_LIST_ITEMS + 1)},
+    }
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_envelope_v1(envelope)
+
+
+def test_validate_envelope_rejects_payload_dict_exceeding_max_keys() -> None:
+    payload = {f"k{i}": i for i in range(MAX_KEYS + 1)}
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "test",
+        "input_payload": payload,
+    }
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_envelope_v1(envelope)
+
+
+def test_validate_envelope_rejects_payload_dict_key_exceeding_max_length() -> None:
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "test",
+        "input_payload": {("k" * (MAX_STRING_LENGTH + 1)): "value"},
+    }
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_envelope_v1(envelope)
+
+
+def test_validate_envelope_rejects_overlong_required_string_field() -> None:
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "m" * (MAX_STRING_LENGTH + 1),
+        "input_payload": {},
+    }
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_envelope_v1(envelope)
+
+
+def test_validate_output_rejects_oversized_list_in_payload() -> None:
+    output = {
+        "contract_version": AI_GATEWAY_OUTPUT_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "accepted": False,
+        "reason_id": "POLICY_DENIED",
+        "output_payload": {"items": ["x"] * (MAX_LIST_ITEMS + 1)},
+        "context_hash": "abc123",
+    }
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_output_v1(output)
