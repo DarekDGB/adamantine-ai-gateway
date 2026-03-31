@@ -142,6 +142,16 @@ class _EmptyActionAdapter:
         }
 
 
+class _ManifestOnlyRegistry:
+    def get_manifest(self, name: str) -> dict:
+        if name != "poi":
+            raise AdapterError(ReasonID.ADAPTER_NOT_REGISTERED.value)
+        return _manifest("poi")
+
+    def get(self, name: str):
+        raise AdapterError(ReasonID.ADAPTER_NOT_REGISTERED.value)
+
+
 def _policy_pack() -> dict:
     return {
         "policypack_version": POLICYPACK_V1,
@@ -289,6 +299,23 @@ def test_process_with_policy_rejects_manifestless_registered_adapter() -> None:
 
     assert result["accepted"] is False
     assert result["reason_id"] == ReasonID.ADAPTER_VALIDATION_FAILED.value
+
+
+def test_process_with_policy_rejects_manifest_present_but_adapter_missing() -> None:
+    gateway = AIGateway(_ManifestOnlyRegistry())
+
+    result = gateway.process_with_policy(
+        adapter_name="poi",
+        source_input={
+            "task_type": "code_review",
+            "model_family": "poi-v1",
+            "input_payload": {"action": "evaluate_candidate"},
+        },
+        policy_pack=_policy_pack(),
+    )
+
+    assert result["accepted"] is False
+    assert result["reason_id"] == ReasonID.ADAPTER_NOT_REGISTERED.value
 
 
 def test_process_with_policy_maps_validation_error() -> None:
