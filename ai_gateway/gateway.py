@@ -1,6 +1,7 @@
 from ai_gateway.contracts.envelope_v1 import AI_GATEWAY_ENVELOPE_V1
 from ai_gateway.contracts.output_v1 import AI_GATEWAY_OUTPUT_V1
 from ai_gateway.errors import AdapterError, ContractError, PolicyError, ValidationError
+from ai_gateway.handoff import build_handoff_v1
 from ai_gateway.policy import enforce_policy_for_adapter
 from ai_gateway.reason_ids import ReasonID
 from ai_gateway.receipt import build_receipt_v1
@@ -81,6 +82,81 @@ class AIGateway:
                 output=fallback_output,
             )
             return {"output": fallback_output, "receipt": fallback_receipt}
+
+    def process_governed(
+        self,
+        adapter_name: str,
+        source_input: dict,
+        policy_pack: PolicyPack,
+    ) -> dict[str, Output | Receipt | dict | None]:
+        try:
+            manifest = self._registry.get_manifest(adapter_name)
+        except AdapterError as exc:
+            return {
+                "output": self._fail_closed(
+                    adapter_name,
+                    self._reason_id_from_error(
+                        exc,
+                        ReasonID.ADAPTER_VALIDATION_FAILED,
+                    ),
+                    source_input,
+                ),
+                "receipt": None,
+                "handoff": None,
+            }
+
+        envelope, output = self._process_components_with_policy(
+            adapter_name=adapter_name,
+            source_input=source_input,
+            policy_pack=policy_pack,
+        )
+
+        try:
+            receipt = build_receipt_v1(
+                manifest=manifest,
+                envelope=envelope,
+                output=output,
+            )
+            handoff = build_handoff_v1(
+                envelope=envelope,
+                output=output,
+                receipt=receipt,
+            )
+            return {
+                "output": output,
+                "receipt": receipt,
+                "handoff": handoff,
+            }
+        except Exception:
+            fallback_envelope = self._fail_closed_envelope(adapter_name, source_input)
+            fallback_output = self._fail_closed(
+                adapter_name,
+                ReasonID.INTERNAL_ERROR,
+                source_input,
+            )
+
+            try:
+                fallback_receipt = build_receipt_v1(
+                    manifest=manifest,
+                    envelope=fallback_envelope,
+                    output=fallback_output,
+                )
+                fallback_handoff = build_handoff_v1(
+                    envelope=fallback_envelope,
+                    output=fallback_output,
+                    receipt=fallback_receipt,
+                )
+                return {
+                    "output": fallback_output,
+                    "receipt": fallback_receipt,
+                    "handoff": fallback_handoff,
+                }
+            except Exception:
+                return {
+                    "output": fallback_output,
+                    "receipt": None,
+                    "handoff": None,
+                }
 
     def _process_components(
         self,
