@@ -23,6 +23,15 @@ class AIGateway:
         source_input: dict,
         policy_pack: PolicyPack,
     ) -> Output:
+        try:
+            self._registry.get_manifest(adapter_name)
+        except AdapterError as exc:
+            return self._fail_closed(
+                adapter_name,
+                self._reason_id_from_error(exc, ReasonID.ADAPTER_VALIDATION_FAILED),
+                source_input,
+            )
+
         _, output = self._process_components_with_policy(
             adapter_name=adapter_name,
             source_input=source_input,
