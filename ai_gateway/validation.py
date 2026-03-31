@@ -37,7 +37,6 @@ from ai_gateway.errors import ContractError, ValidationError
 from ai_gateway.reason_ids import ReasonID
 
 
-# 🔒 Boundary limits (deterministic constants)
 MAX_DEPTH = 10
 MAX_KEYS = 1000
 MAX_LIST_ITEMS = 1000
@@ -83,6 +82,8 @@ def _validate_canonical_value(value: Any, depth: int = 0) -> None:
             raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
         for key, val in value.items():
             if not isinstance(key, str):
+                raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+            if len(key) > MAX_STRING_LENGTH:
                 raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
             _validate_canonical_value(val, depth + 1)
         return
@@ -153,8 +154,6 @@ def _validate_adapter_policy(value: Any) -> dict:
         "allowed_actions": _validate_string_list(data["allowed_actions"]),
     }
 
-
-# === existing validators unchanged below ===
 
 def validate_envelope_v1(envelope: Any) -> dict:
     data = _require_dict(envelope)
@@ -234,6 +233,14 @@ def validate_manifest_v1(manifest: Any) -> dict:
     if data["output_contract"] != AI_GATEWAY_OUTPUT_V1:
         raise ContractError(ReasonID.SCHEMA_VIOLATION.value)
 
+    for reason_id in data["failure_reason_ids"]:
+        if reason_id == "ACCEPTED":
+            continue
+        try:
+            ReasonID(reason_id)
+        except ValueError as exc:
+            raise ValidationError(ReasonID.SCHEMA_VIOLATION.value) from exc
+
     return data
 
 
@@ -262,10 +269,13 @@ def validate_policypack_v1(policy_pack: Any) -> dict:
         raise ContractError(ReasonID.POLICY_DENIED.value)
 
     adapter_policies = _require_dict(data["adapter_policies"])
+    if not adapter_policies:
+        raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
 
     validated_adapter_policies: dict[str, dict] = {}
     for adapter_id, adapter_policy in adapter_policies.items():
-        validated_adapter_policies[_validate_non_empty_str(adapter_id)] = _validate_adapter_policy(
+        validated_adapter_id = _validate_non_empty_str(adapter_id)
+        validated_adapter_policies[validated_adapter_id] = _validate_adapter_policy(
             adapter_policy
         )
 
@@ -291,7 +301,12 @@ def validate_handoff_v1(handoff: Any) -> dict:
         if field not in data or data[field] is None:
             raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
 
-    for field in ("handoff_version", "adapter", "task_type", "reason_id"):
+    for field in (
+        "handoff_version",
+        "adapter",
+        "task_type",
+        "reason_id",
+    ):
         _validate_non_empty_str(data[field])
 
     if data["policy_decision"] not in ALLOWED_HANDOFF_DECISIONS:
@@ -332,5 +347,8 @@ def validate_receipt_v1(receipt: Any) -> dict:
 
     _validate_hash_hex(data["envelope_hash"])
     _validate_hash_hex(data["output_hash"])
+
+    if data["created_from_contract"] != AI_GATEWAY_OUTPUT_V1:
+        raise ContractError(ReasonID.INVALID_OUTPUT.value)
 
     return data
