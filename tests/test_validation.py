@@ -10,6 +10,7 @@ from ai_gateway.validation import (
     MAX_LIST_ITEMS,
     MAX_STRING_LENGTH,
     validate_envelope_v1,
+    validate_manifest_v1,
     validate_output_v1,
 )
 
@@ -346,3 +347,49 @@ def test_validate_output_rejects_oversized_list_in_payload() -> None:
 
     with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
         validate_output_v1(output)
+
+
+def test_validate_manifest_rejects_overlong_required_string_field() -> None:
+    manifest = {
+        "manifest_version": "adapter_manifest_v1",
+        "adapter_id": "poi",
+        "adapter_version": "0.5.0",
+        "entrypoint": "e" * (MAX_STRING_LENGTH + 1),
+        "accepted_input_types": ["policy_test_input"],
+        "supported_actions": ["evaluate_candidate"],
+        "required_payload_fields": ["task_type", "model_family"],
+        "optional_payload_fields": ["input_payload"],
+        "output_contract": "ai_gateway_output_v1",
+        "determinism_constraints": ["canonical_json_only"],
+        "failure_reason_ids": [
+            "ACCEPTED",
+            "SCHEMA_VIOLATION",
+        ],
+        "notes": "manifest",
+    }
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_manifest_v1(manifest)
+
+
+def test_validate_manifest_rejects_string_list_exceeding_max_items() -> None:
+    manifest = {
+        "manifest_version": "adapter_manifest_v1",
+        "adapter_id": "poi",
+        "adapter_version": "0.5.0",
+        "entrypoint": "tests.test_validation.poi",
+        "accepted_input_types": ["x"] * (MAX_LIST_ITEMS + 1),
+        "supported_actions": ["evaluate_candidate"],
+        "required_payload_fields": ["task_type", "model_family"],
+        "optional_payload_fields": ["input_payload"],
+        "output_contract": "ai_gateway_output_v1",
+        "determinism_constraints": ["canonical_json_only"],
+        "failure_reason_ids": [
+            "ACCEPTED",
+            "SCHEMA_VIOLATION",
+        ],
+        "notes": "manifest",
+    }
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_manifest_v1(manifest)
