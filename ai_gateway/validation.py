@@ -4,6 +4,12 @@ from ai_gateway.contracts.envelope_v1 import (
     AI_GATEWAY_ENVELOPE_V1,
     REQUIRED_ENVELOPE_FIELDS,
 )
+from ai_gateway.contracts.handoff_v1 import (
+    AI_GATEWAY_HANDOFF_V1,
+    ALLOWED_HANDOFF_DECISIONS,
+    ALLOWED_HANDOFF_FIELDS,
+    REQUIRED_HANDOFF_FIELDS,
+)
 from ai_gateway.contracts.manifest_v1 import (
     ADAPTER_MANIFEST_V1,
     ALLOWED_MANIFEST_FIELDS,
@@ -97,6 +103,16 @@ def _validate_hash_hex(value: Any) -> str:
     if len(validated) != 64 or any(ch not in "0123456789abcdef" for ch in validated):
         raise ContractError(ReasonID.INVALID_OUTPUT.value)
     return validated
+
+
+def _validate_optional_hash_or_empty(value: Any) -> str:
+    if not isinstance(value, str):
+        raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+
+    if value == "":
+        return value
+
+    return _validate_hash_hex(value)
 
 
 def _validate_adapter_policy(value: Any) -> dict:
@@ -246,6 +262,36 @@ def validate_policypack_v1(policy_pack: Any) -> dict:
         "adapter_policies": validated_adapter_policies,
         "notes": data["notes"],
     }
+
+
+def validate_handoff_v1(handoff: Any) -> dict:
+    data = _require_dict(handoff)
+
+    if data.get("handoff_version") != AI_GATEWAY_HANDOFF_V1:
+        raise ContractError(ReasonID.INVALID_OUTPUT.value)
+
+    _reject_unknown_fields(data, ALLOWED_HANDOFF_FIELDS)
+
+    for field in REQUIRED_HANDOFF_FIELDS:
+        if field not in data or data[field] is None:
+            raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
+
+    for field in (
+        "handoff_version",
+        "adapter",
+        "task_type",
+        "reason_id",
+    ):
+        _validate_non_empty_str(data[field])
+
+    if data["policy_decision"] not in ALLOWED_HANDOFF_DECISIONS:
+        raise ContractError(ReasonID.INVALID_OUTPUT.value)
+
+    _validate_hash_hex(data["envelope_hash"])
+    _validate_hash_hex(data["output_hash"])
+    _validate_optional_hash_or_empty(data["context_hash"])
+
+    return data
 
 
 def validate_receipt_v1(receipt: Any) -> dict:
