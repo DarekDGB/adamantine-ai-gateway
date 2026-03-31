@@ -4,6 +4,75 @@ All notable changes to this project will be documented in this file.
 
 The format follows a simple release log with explicit scope and locked boundary behavior.
 
+---
+
+## [v0.5.0] - 2026-03-31
+
+### Added
+- PolicyPack V1 contract (`POLICYPACK_V1.md`)
+- Policy validation enforcing adapter-level governance rules
+- Policy enforcement integration in gateway (`process_with_policy`)
+- AI Gateway Handoff V1 contract (`AI_GATEWAY_HANDOFF_V1.md`)
+- Deterministic handoff builder (`build_handoff_v1`)
+- Governed gateway processing path (`process_governed`)
+- Manifest-required execution mode (no manifest → fail-closed)
+- Receipt-required execution mode (always produces evidence)
+- Boundary input limits:
+  - Maximum payload depth
+  - Maximum dict key count
+  - Maximum list size
+  - Maximum string length
+- Extended validation to enforce limits on both payload and contract fields
+- Abuse and negative test suite covering:
+  - malformed payloads
+  - oversized inputs
+  - invalid contract structures
+  - policy violations
+  - fallback paths
+
+### Changed
+- Gateway upgraded from validation boundary to enforcement + governance boundary
+- Policy enforcement now occurs before output acceptance
+- Gateway now produces deterministic handoff artifacts alongside output and receipt
+- Validation layer extended to enforce structural limits and prevent resource abuse
+- Fail-closed behavior strengthened across governed execution paths
+- Receipt and handoff flows hardened with deterministic fallback guarantees
+- Test suite expanded to cover governance paths, abuse cases, and boundary limits while maintaining 100% coverage
+
+### Included in this release
+- All functionality from v0.3.0
+- `POLICYPACK_V1`
+- Policy validation and enforcement layer
+- `AI_GATEWAY_HANDOFF_V1`
+- Deterministic handoff builder
+- Governed processing path (`process_governed`)
+- Manifest-required execution enforcement
+- Receipt-required execution enforcement
+- Boundary input limits enforcement
+- Abuse/negative test suite
+- Deterministic enforcement boundary behavior
+- 100% test coverage enforced
+
+### Release scope
+This release transforms the Adamantine AI Gateway from a deterministic validation and evidence boundary into a deterministic enforcement and governance boundary by introducing policy packs, handoff artifacts, governed execution paths, and strict input limits while preserving fail-closed and contract-first guarantees.
+
+### v0.5.0 principles
+- Untrusted input boundary
+- Fail-closed always
+- Contract-first
+- Deterministic input/output only
+- Strict schema, no unknown fields
+- Canonical-safe payloads only
+- Explicit adapter declaration via manifests
+- Deterministic evidence via receipts
+- Deterministic decisions via handoff artifacts
+- Policy-enforced execution
+- No silent fallback
+- Explicit reason_id for all failures
+- Adapters translate, gateway verifies and enforces, AdamantineOS decides
+
+---
+
 ## [v0.3.0] - 2026-03-30
 
 ### Added
@@ -48,6 +117,8 @@ This release extends the Adamantine AI Gateway from a deterministic validation b
 - Explicit adapter declaration via manifests
 - Deterministic evidence via receipts
 - Adapters translate, gateway verifies, AdamantineOS decides
+
+---
 
 ## [v0.2.0] - 2026-03-30
 
@@ -97,6 +168,8 @@ This release hardens the Adamantine AI Gateway boundary from a minimal safe foun
 - Canonical-safe payloads only
 - Typed errors, no string-based guessing
 - Adapters translate, gateway verifies, AdamantineOS decides
+
+---
 
 ## [v0.1.0] - 2026-03-29
 
