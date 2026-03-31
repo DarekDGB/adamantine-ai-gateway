@@ -13,6 +13,14 @@ from ai_gateway.contracts.output_v1 import (
     AI_GATEWAY_OUTPUT_V1,
     REQUIRED_OUTPUT_FIELDS,
 )
+from ai_gateway.contracts.policypack_v1 import (
+    ALLOWED_ADAPTER_POLICY_FIELDS,
+    ALLOWED_POLICYPACK_DEFAULT_DECISIONS,
+    ALLOWED_POLICYPACK_FIELDS,
+    POLICYPACK_V1,
+    REQUIRED_ADAPTER_POLICY_FIELDS,
+    REQUIRED_POLICYPACK_FIELDS,
+)
 from ai_gateway.contracts.receipt_v1 import (
     AI_GATEWAY_RECEIPT_V1,
     ALLOWED_POLICY_DECISIONS,
@@ -89,6 +97,21 @@ def _validate_hash_hex(value: Any) -> str:
     if len(validated) != 64 or any(ch not in "0123456789abcdef" for ch in validated):
         raise ContractError(ReasonID.INVALID_OUTPUT.value)
     return validated
+
+
+def _validate_adapter_policy(value: Any) -> dict:
+    data = _require_dict(value)
+    _reject_unknown_fields(data, ALLOWED_ADAPTER_POLICY_FIELDS)
+
+    for field in REQUIRED_ADAPTER_POLICY_FIELDS:
+        if field not in data or data[field] is None:
+            raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
+
+    return {
+        "allowed_task_types": _validate_string_list(data["allowed_task_types"]),
+        "allowed_model_families": _validate_string_list(data["allowed_model_families"]),
+        "allowed_actions": _validate_string_list(data["allowed_actions"]),
+    }
 
 
 def validate_envelope_v1(envelope: Any) -> dict:
@@ -178,6 +201,51 @@ def validate_manifest_v1(manifest: Any) -> dict:
             raise ValidationError(ReasonID.SCHEMA_VIOLATION.value) from exc
 
     return data
+
+
+def validate_policypack_v1(policy_pack: Any) -> dict:
+    data = _require_dict(policy_pack)
+
+    if data.get("policypack_version") != POLICYPACK_V1:
+        raise ContractError(ReasonID.SCHEMA_VIOLATION.value)
+
+    _reject_unknown_fields(data, ALLOWED_POLICYPACK_FIELDS)
+
+    for field in REQUIRED_POLICYPACK_FIELDS:
+        if field not in data or data[field] is None:
+            raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
+
+    for field in (
+        "policypack_version",
+        "policypack_id",
+        "policypack_version_id",
+        "default_decision",
+        "notes",
+    ):
+        _validate_non_empty_str(data[field])
+
+    if data["default_decision"] not in ALLOWED_POLICYPACK_DEFAULT_DECISIONS:
+        raise ContractError(ReasonID.POLICY_DENIED.value)
+
+    adapter_policies = _require_dict(data["adapter_policies"])
+    if not adapter_policies:
+        raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
+
+    validated_adapter_policies: dict[str, dict] = {}
+    for adapter_id, adapter_policy in adapter_policies.items():
+        validated_adapter_id = _validate_non_empty_str(adapter_id)
+        validated_adapter_policies[validated_adapter_id] = _validate_adapter_policy(
+            adapter_policy
+        )
+
+    return {
+        "policypack_version": data["policypack_version"],
+        "policypack_id": data["policypack_id"],
+        "policypack_version_id": data["policypack_version_id"],
+        "default_decision": data["default_decision"],
+        "adapter_policies": validated_adapter_policies,
+        "notes": data["notes"],
+    }
 
 
 def validate_receipt_v1(receipt: Any) -> dict:
