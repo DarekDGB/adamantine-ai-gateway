@@ -1,11 +1,35 @@
 import pytest
 
+from ai_gateway.contracts.policypack_v1 import POLICYPACK_V1
 from ai_gateway.errors import AdapterError, ContractError, PolicyError, ValidationError
 from ai_gateway.gateway import AIGateway
 from ai_gateway.policy import enforce_policy_for_adapter
 from ai_gateway.reason_ids import ReasonID
 from ai_gateway.registry import AdapterRegistry
-from ai_gateway.contracts.policypack_v1 import POLICYPACK_V1
+
+
+def _manifest(adapter_id: str) -> dict:
+    return {
+        "manifest_version": "adapter_manifest_v1",
+        "adapter_id": adapter_id,
+        "adapter_version": "0.5.0",
+        "entrypoint": f"tests.test_policy_enforcement.{adapter_id}",
+        "accepted_input_types": ["policy_test_input"],
+        "supported_actions": ["evaluate_candidate"],
+        "required_payload_fields": ["task_type", "model_family"],
+        "optional_payload_fields": ["input_payload"],
+        "output_contract": "ai_gateway_output_v1",
+        "determinism_constraints": ["canonical_json_only"],
+        "failure_reason_ids": [
+            "ACCEPTED",
+            "SCHEMA_VIOLATION",
+            "INVALID_ENVELOPE",
+            "POLICY_DENIED",
+            "ADAPTER_VALIDATION_FAILED",
+            "INTERNAL_ERROR",
+        ],
+        "notes": "Policy enforcement test manifest",
+    }
 
 
 class _DummyAdapter:
@@ -137,7 +161,7 @@ def _policy_pack() -> dict:
 
 def _gateway() -> AIGateway:
     registry = AdapterRegistry()
-    registry.register("poi", _DummyAdapter())
+    registry.register("poi", _DummyAdapter(), manifest=_manifest("poi"))
     return AIGateway(registry)
 
 
@@ -248,9 +272,28 @@ def test_process_with_policy_rejects_unregistered_adapter() -> None:
     assert result["reason_id"] == ReasonID.ADAPTER_NOT_REGISTERED.value
 
 
+def test_process_with_policy_rejects_manifestless_registered_adapter() -> None:
+    registry = AdapterRegistry()
+    registry.register("poi", _DummyAdapter())
+    gateway = AIGateway(registry)
+
+    result = gateway.process_with_policy(
+        adapter_name="poi",
+        source_input={
+            "task_type": "code_review",
+            "model_family": "poi-v1",
+            "input_payload": {"action": "evaluate_candidate"},
+        },
+        policy_pack=_policy_pack(),
+    )
+
+    assert result["accepted"] is False
+    assert result["reason_id"] == ReasonID.ADAPTER_VALIDATION_FAILED.value
+
+
 def test_process_with_policy_maps_validation_error() -> None:
     registry = AdapterRegistry()
-    registry.register("poi", _ValidationErrorAdapter())
+    registry.register("poi", _ValidationErrorAdapter(), manifest=_manifest("poi"))
     gateway = AIGateway(registry)
 
     result = gateway.process_with_policy(
@@ -269,7 +312,7 @@ def test_process_with_policy_maps_validation_error() -> None:
 
 def test_process_with_policy_maps_contract_error() -> None:
     registry = AdapterRegistry()
-    registry.register("poi", _ContractErrorAdapter())
+    registry.register("poi", _ContractErrorAdapter(), manifest=_manifest("poi"))
     gateway = AIGateway(registry)
 
     result = gateway.process_with_policy(
@@ -288,7 +331,7 @@ def test_process_with_policy_maps_contract_error() -> None:
 
 def test_process_with_policy_maps_adapter_error() -> None:
     registry = AdapterRegistry()
-    registry.register("poi", _AdapterErrorAdapter())
+    registry.register("poi", _AdapterErrorAdapter(), manifest=_manifest("poi"))
     gateway = AIGateway(registry)
 
     result = gateway.process_with_policy(
@@ -307,7 +350,7 @@ def test_process_with_policy_maps_adapter_error() -> None:
 
 def test_process_with_policy_maps_unexpected_exception_to_internal_error() -> None:
     registry = AdapterRegistry()
-    registry.register("poi", _UnexpectedExceptionAdapter())
+    registry.register("poi", _UnexpectedExceptionAdapter(), manifest=_manifest("poi"))
     gateway = AIGateway(registry)
 
     result = gateway.process_with_policy(
@@ -326,7 +369,7 @@ def test_process_with_policy_maps_unexpected_exception_to_internal_error() -> No
 
 def test_process_with_policy_treats_non_dict_action_payload_as_no_action() -> None:
     registry = AdapterRegistry()
-    registry.register("poi", _NonDictPayloadAdapter())
+    registry.register("poi", _NonDictPayloadAdapter(), manifest=_manifest("poi"))
     gateway = AIGateway(registry)
 
     result = gateway.process_with_policy(
@@ -344,7 +387,7 @@ def test_process_with_policy_treats_non_dict_action_payload_as_no_action() -> No
 
 def test_process_with_policy_treats_empty_action_as_no_action() -> None:
     registry = AdapterRegistry()
-    registry.register("poi", _EmptyActionAdapter())
+    registry.register("poi", _EmptyActionAdapter(), manifest=_manifest("poi"))
     gateway = AIGateway(registry)
 
     result = gateway.process_with_policy(
