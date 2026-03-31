@@ -59,6 +59,19 @@ def test_validate_envelope_v1_rejects_missing_required_field() -> None:
         validate_envelope_v1(envelope)
 
 
+def test_validate_envelope_v1_rejects_non_dict_input_payload() -> None:
+    envelope = {
+        "contract_version": AI_GATEWAY_ENVELOPE_V1,
+        "adapter": "poi",
+        "task_type": "code_review",
+        "model_family": "deterministic-test-model",
+        "input_payload": [],
+    }
+
+    with pytest.raises(ValidationError, match=ReasonID.SCHEMA_VIOLATION.value):
+        validate_envelope_v1(envelope)
+
+
 def test_validate_output_v1_accepts_valid_output() -> None:
     output = {
         "contract_version": AI_GATEWAY_OUTPUT_V1,
