@@ -18,7 +18,7 @@ def _envelope() -> dict:
     }
 
 
-def _output(accepted: bool = True) -> dict:
+def _output(accepted: bool = True, context_hash: object = "") -> dict:
     return {
         "contract_version": "ai_gateway_output_v1",
         "adapter": "poi",
@@ -26,7 +26,7 @@ def _output(accepted: bool = True) -> dict:
         "accepted": accepted,
         "reason_id": "ACCEPTED" if accepted else ReasonID.POLICY_DENIED.value,
         "output_payload": {},
-        "context_hash": "",
+        "context_hash": context_hash,
     }
 
 
@@ -64,6 +64,16 @@ def test_build_handoff_rejected_flow_sets_decision() -> None:
     handoff = build_handoff_v1(envelope, output, receipt)
 
     assert handoff["policy_decision"] == "rejected"
+
+
+def test_build_handoff_coerces_non_string_context_hash_to_empty_string() -> None:
+    envelope = _envelope()
+    output = _output(True, context_hash=123)
+    receipt = _receipt(envelope, output)
+
+    handoff = build_handoff_v1(envelope, output, receipt)
+
+    assert handoff["context_hash"] == ""
 
 
 def test_build_handoff_rejects_envelope_hash_mismatch() -> None:
@@ -179,6 +189,19 @@ def test_validate_handoff_v1_allows_empty_context_hash() -> None:
     validated = validate_handoff_v1(handoff)
 
     assert validated["context_hash"] == ""
+
+
+def test_validate_handoff_v1_allows_valid_non_empty_context_hash() -> None:
+    envelope = _envelope()
+    output = _output(True)
+    receipt = _receipt(envelope, output)
+
+    handoff = build_handoff_v1(envelope, output, receipt)
+    handoff["context_hash"] = "a" * 64
+
+    validated = validate_handoff_v1(handoff)
+
+    assert validated["context_hash"] == "a" * 64
 
 
 def test_validate_handoff_v1_rejects_non_string_context_hash() -> None:
