@@ -170,6 +170,9 @@ def validate_envelope_v1(envelope: Any) -> dict:
         if field not in data or data[field] is None:
             raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
 
+    for field in ("adapter", "task_type", "model_family"):
+        _validate_non_empty_str(data[field])
+
     _validate_payload(data["input_payload"])
 
     return data
@@ -189,6 +192,9 @@ def validate_output_v1(output: Any) -> dict:
     for field in REQUIRED_OUTPUT_FIELDS:
         if field not in data or data[field] is None:
             raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
+
+    for field in ("adapter", "task_type", "reason_id", "context_hash"):
+        _validate_non_empty_str(data[field])
 
     if not isinstance(data["accepted"], bool):
         raise ContractError(ReasonID.INVALID_OUTPUT.value)
