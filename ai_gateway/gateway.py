@@ -6,7 +6,7 @@ from ai_gateway.policy import enforce_policy_for_adapter
 from ai_gateway.reason_ids import ReasonID
 from ai_gateway.receipt import build_receipt_v1
 from ai_gateway.registry import AdapterRegistry
-from ai_gateway.types import Envelope, Output, PolicyPack, Receipt
+from ai_gateway.types import Envelope, Manifest, Output, PolicyPack, Receipt
 from ai_gateway.validation import validate_envelope_v1
 
 
@@ -25,7 +25,7 @@ class AIGateway:
         policy_pack: PolicyPack,
     ) -> Output:
         try:
-            self._registry.get_manifest(adapter_name)
+            manifest = self._registry.get_manifest(adapter_name)
         except AdapterError as exc:
             return self._fail_closed(
                 adapter_name,
@@ -37,6 +37,7 @@ class AIGateway:
             adapter_name=adapter_name,
             source_input=source_input,
             policy_pack=policy_pack,
+            manifest=manifest,
         )
         return output
 
@@ -109,6 +110,7 @@ class AIGateway:
             adapter_name=adapter_name,
             source_input=source_input,
             policy_pack=policy_pack,
+            manifest=manifest,
         )
 
         try:
@@ -237,6 +239,7 @@ class AIGateway:
         adapter_name: str,
         source_input: dict,
         policy_pack: PolicyPack,
+        manifest: Manifest,
     ) -> tuple[Envelope, Output]:
         try:
             adapter = self._registry.get(adapter_name)
@@ -252,6 +255,12 @@ class AIGateway:
 
         try:
             envelope = adapter.build_envelope(source_input)
+            self._enforce_manifest_envelope_alignment(
+                adapter_name=adapter_name,
+                manifest=manifest,
+                envelope=envelope,
+            )
+
             action = self._extract_action(envelope)
             enforce_policy_for_adapter(
                 policy_pack=policy_pack,
@@ -260,7 +269,14 @@ class AIGateway:
                 model_family=envelope["model_family"],
                 action=action,
             )
-            return envelope, adapter.build_output(envelope)
+
+            output = adapter.build_output(envelope)
+            self._enforce_manifest_output_alignment(
+                manifest=manifest,
+                envelope=envelope,
+                output=output,
+            )
+            return envelope, output
 
         except ValidationError as exc:
             return (
@@ -326,6 +342,37 @@ class AIGateway:
             return None
 
         return action
+
+    @staticmethod
+    def _enforce_manifest_envelope_alignment(
+        adapter_name: str,
+        manifest: Manifest,
+        envelope: Envelope,
+    ) -> None:
+        if envelope["adapter"] != adapter_name:
+            raise ContractError(ReasonID.INVALID_ENVELOPE.value)
+
+        if manifest["adapter_id"] != adapter_name:
+            raise ContractError(ReasonID.INVALID_ENVELOPE.value)
+
+        action = AIGateway._extract_action(envelope)
+        if action is not None and action not in manifest["supported_actions"]:
+            raise AdapterError(ReasonID.ADAPTER_VALIDATION_FAILED.value)
+
+    @staticmethod
+    def _enforce_manifest_output_alignment(
+        manifest: Manifest,
+        envelope: Envelope,
+        output: Output,
+    ) -> None:
+        if output["adapter"] != manifest["adapter_id"]:
+            raise ContractError(ReasonID.INVALID_OUTPUT.value)
+
+        if output["contract_version"] != manifest["output_contract"]:
+            raise ContractError(ReasonID.INVALID_OUTPUT.value)
+
+        if output["task_type"] != envelope["task_type"]:
+            raise ContractError(ReasonID.INVALID_OUTPUT.value)
 
     @staticmethod
     def _fail_closed(
