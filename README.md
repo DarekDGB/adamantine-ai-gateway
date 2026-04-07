@@ -1,100 +1,169 @@
 # Adamantine AI Gateway
 
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/DarekDGB/adamantine-ai-gateway)
+[![Tests](https://img.shields.io/badge/tests-223%20passed-brightgreen.svg)](https://github.com/DarekDGB/adamantine-ai-gateway)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/DarekDGB/adamantine-ai-gateway)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+
 Fail-closed, contract-first gateway for untrusted AI-originated work.
 
-------------------------------------------------------------------------
+---
 
 ## Overview
 
-Adamantine AI Gateway is a deterministic boundary layer that converts\
-untrusted AI outputs into structured, validated, policy-controlled\
-evidence.
+Adamantine AI Gateway is a deterministic boundary layer that converts untrusted AI outputs into structured, validated, policy-controlled evidence.
 
-External AI\
-→ Adapter\
-→ AI Gateway\
-→ Q-ID → Shield v3 → Adaptive Core → AdamantineOS
+It sits between variable external AI systems and the stricter Adamantine stack.
 
-------------------------------------------------------------------------
+---
 
-## v0.5.0 Highlights
+## System Diagram
 
--   PolicyPack V1 (deterministic policy enforcement contract)
--   AI Gateway Handoff V1 (final decision artifact for downstream
-    systems)
--   Governed processing path (`process_governed`)
--   Manifest-required execution mode (no manifest → fail)
--   Receipt-required execution mode (always produces evidence)
--   Boundary input limits (depth, size, structure, strings)
--   Strict abuse/negative test coverage
--   100% test coverage enforced
+```text
+External AI
+    ↓
+Adapter
+    ↓
+Adamantine AI Gateway
+    ├─ validate contract boundary
+    ├─ enforce manifest/runtime alignment
+    ├─ enforce policy
+    ├─ produce deterministic output
+    ├─ produce deterministic receipt
+    └─ produce deterministic handoff
+    ↓
+Q-ID
+    ↓
+Shield v3
+    ↓
+Adaptive Core
+    ↓
+AdamantineOS
+```
 
-------------------------------------------------------------------------
+---
 
-## What Changed in v0.5.0
+## v1.0.0 Highlights
 
-v0.5.0 upgrades the gateway from a validation layer to a full\
-**enforcement and governance boundary**.
+- Public API freeze locked
+- Version truth locked across runtime, package metadata, and release files
+- Artifact-chain invariants locked
+- Stable reason-ID mapping locked
+- Manifest `failure_reason_ids` completeness locked
+- Built-in adapter manifest/runtime parity locked
+- Governed manifest enforcement locked
+- Receipt-path manifest/runtime enforcement parity locked
+- Deterministic fallback artifacts locked
+- Release-truth / doc-contract parity locked
+- 100% test coverage enforced
 
-The system now:
+---
 
--   Enforces policy before execution
--   Requires adapter manifests
--   Produces deterministic receipts for all flows
--   Generates handoff artifacts for downstream decision systems
--   Rejects malformed or abusive inputs at the boundary
+## What v1.0.0 Means
 
-This transforms the gateway into a **deterministic execution firewall
-for AI-originated work**.
+v1.0.0 is the first fully locked release of Adamantine AI Gateway as a deterministic execution boundary for untrusted AI-originated work.
 
-------------------------------------------------------------------------
+This release freezes the gateway around these guarantees:
+
+- Fail-closed behavior
+- Contract-first validation
+- Deterministic artifact generation
+- Explicit manifest-declared adapter boundaries
+- Explicit policy enforcement
+- Stable reason-ID semantics
+- Release truth aligned with implementation
+
+This is no longer just a safe prototype boundary.
+
+It is now a **locked release surface** for downstream integration.
+
+---
 
 ## Core Flow
 
-External AI\
-→ Adapter (translation)\
-→ AI Gateway (validation + policy enforcement)\
-→ Receipt (evidence)\
-→ Handoff (decision artifact)\
-→ Q-ID → Shield v3 → Adaptive Core → AdamantineOS
+```text
+External AI
+→ Adapter
+→ AI Gateway
+→ Output
+→ Receipt
+→ Handoff
+→ Q-ID
+→ Shield v3
+→ Adaptive Core
+→ AdamantineOS
+```
 
-------------------------------------------------------------------------
+---
 
-## Principles
+## Runtime Paths
 
--   Fail-closed always\
--   Contract-first\
--   Deterministic processing\
--   No unknown fields\
--   Canonical-safe payloads\
--   Explicit reason_id for all failures\
--   No silent fallbacks\
--   Adapters translate, gateway verifies and enforces
+### `process`
+Base deterministic processing path.
 
-------------------------------------------------------------------------
+### `process_with_policy`
+Adds policy enforcement before acceptance.
+
+### `process_with_receipt`
+Adds deterministic evidence generation.
+
+### `process_governed`
+Produces output + receipt + handoff as the full governed path.
+
+---
 
 ## Security Model
 
--   All AI output is treated as untrusted input\
--   All inputs must pass strict contract validation\
--   All actions must pass policy enforcement\
--   All decisions are recorded as deterministic evidence\
--   All failures produce valid contract outputs
+- All AI-originated work is treated as untrusted input
+- All accepted artifacts must match strict contract shape
+- All governed flows require manifest/runtime alignment
+- All decisions must remain deterministic
+- All failures must remain fail-closed
+- All important rejection paths must emit explicit reason IDs
+- No silent fallback is allowed
 
-No execution is allowed without:
+No governed path is allowed without:
 
--   Valid contract\
--   Valid policy\
--   Valid manifest\
--   Deterministic validation
+- Valid contract
+- Valid manifest
+- Valid policy scope
+- Deterministic-safe structure
 
-------------------------------------------------------------------------
+---
 
-## Status
+## Contracts
 
-v0.5.0 establishes Adamantine AI Gateway as a\
-**deterministic enforcement boundary for AI systems**.
+Current contract surface:
 
-------------------------------------------------------------------------
+- `AI_GATEWAY_ENVELOPE_V1`
+- `ADAPTER_MANIFEST_V1`
+- `AI_GATEWAY_OUTPUT_V1`
+- `AI_GATEWAY_RECEIPT_V1`
+- `AI_GATEWAY_HANDOFF_V1`
+- `POLICYPACK_V1`
 
-MIT © DarekDGB
+See `contracts/` for the formal repo contract documents.
+
+---
+
+## Principles
+
+- Fail-closed always
+- Contract-first
+- Deterministic processing only
+- No unknown fields
+- Canonical-safe payloads
+- Explicit reason IDs
+- No hidden authority
+- No silent fallbacks
+- Adapters translate, gateway verifies and enforces
+
+---
+
+## Release Status
+
+v1.0.0 establishes Adamantine AI Gateway as a locked deterministic enforcement boundary for AI systems.
+
+---
+
+MIT License © DarekDGB
