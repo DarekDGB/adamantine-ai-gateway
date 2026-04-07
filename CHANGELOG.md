@@ -6,6 +6,62 @@ The format follows a simple release log with explicit scope and locked boundary 
 
 ---
 
+## [v1.0.0] - 2026-04-07
+
+### Added
+- Public API freeze lock
+- Version-truth lock across runtime, package metadata, and release files
+- Artifact-chain invariant lock across manifest → envelope → output → receipt → handoff
+- Stable reason-ID mapping lock
+- Manifest `failure_reason_ids` completeness lock
+- Built-in adapter manifest/runtime parity lock
+- Governed manifest/runtime enforcement lock
+- Receipt-path manifest/runtime enforcement parity lock
+- Deterministic fallback artifact lock
+- Release-truth / doc-contract parity lock
+- Additional tests covering manifest/runtime edge cases and fallback determinism
+
+### Changed
+- Gateway hardening elevated from milestone release to locked release surface
+- Manifest/runtime enforcement now applies consistently across governed and receipt-aware paths
+- Receipt path now matches governed-path enforcement expectations
+- Fallback artifact behavior is now tested as deterministic contract behavior
+- Release files now reflect a coordinated v1.0.0 locked-state release
+
+### Included in this release
+- All functionality from v0.5.0
+- Public API freeze
+- Version truth guarantees
+- Artifact-chain invariant guarantees
+- Stable reason-ID semantics
+- Manifest failure-reason completeness guarantees
+- Built-in adapter manifest/runtime parity guarantees
+- Governed manifest/runtime enforcement
+- Receipt manifest/runtime enforcement parity
+- Deterministic fallback artifact guarantees
+- Release truth / doc-contract parity
+- 100% test coverage enforced
+
+### Release scope
+This release establishes Adamantine AI Gateway as a locked deterministic enforcement boundary by freezing its public API, aligning manifests with runtime behavior, enforcing deterministic fail-closed artifact generation, and binding release documentation to the actual code and contract surface.
+
+### v1.0.0 principles
+- Untrusted input boundary
+- Fail-closed always
+- Contract-first
+- Deterministic input/output only
+- Strict schema, no unknown fields
+- Canonical-safe payloads only
+- Explicit adapter declaration via manifests
+- Manifest/runtime parity required
+- Deterministic evidence via receipts
+- Deterministic decisions via handoff artifacts
+- Explicit reason_id for all important failures
+- No silent fallback
+- Adapters translate, gateway verifies and enforces, AdamantineOS decides
+
+---
+
 ## [v0.5.0] - 2026-03-31
 
 ### Added
