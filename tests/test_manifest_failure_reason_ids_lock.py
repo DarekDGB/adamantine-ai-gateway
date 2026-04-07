@@ -166,7 +166,7 @@ def test_manifest_failure_reason_ids_cover_real_emitted_policy_reasons() -> None
     assert unsupported_model["reason_id"] == ReasonID.UNSUPPORTED_MODEL.value
 
     assert denied_action["reason_id"] in manifest_reasons
-    assert denied_action["reason_id"] == ReasonID.POLICY_DENIED.value
+    assert denied_action["reason_id"] == ReasonID.ADAPTER_VALIDATION_FAILED.value
 
 
 def test_manifest_failure_reason_ids_cover_real_emitted_validation_reasons() -> None:
