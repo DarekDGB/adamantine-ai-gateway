@@ -154,11 +154,11 @@ def test_process_governed_rejects_output_contract_drift() -> None:
     )
 
     assert result["output"]["accepted"] is False
-    assert result["output"]["reason_id"] == ReasonID.INVALID_ENVELOPE.value
+    assert result["output"]["reason_id"] == ReasonID.INVALID_OUTPUT.value
     assert result["receipt"] is not None
     assert result["handoff"] is not None
-    assert result["receipt"]["reason_id"] == ReasonID.INVALID_ENVELOPE.value
-    assert result["handoff"]["reason_id"] == ReasonID.INVALID_ENVELOPE.value
+    assert result["receipt"]["reason_id"] == ReasonID.INVALID_OUTPUT.value
+    assert result["handoff"]["reason_id"] == ReasonID.INVALID_OUTPUT.value
 
 
 def test_process_governed_rejects_output_adapter_drift() -> None:
@@ -169,9 +169,11 @@ def test_process_governed_rejects_output_adapter_drift() -> None:
     )
 
     assert result["output"]["accepted"] is False
-    assert result["output"]["reason_id"] == ReasonID.INVALID_ENVELOPE.value
+    assert result["output"]["reason_id"] == ReasonID.INVALID_OUTPUT.value
     assert result["receipt"] is not None
     assert result["handoff"] is not None
+    assert result["receipt"]["reason_id"] == ReasonID.INVALID_OUTPUT.value
+    assert result["handoff"]["reason_id"] == ReasonID.INVALID_OUTPUT.value
 
 
 def test_process_governed_rejects_output_task_type_drift() -> None:
@@ -182,6 +184,22 @@ def test_process_governed_rejects_output_task_type_drift() -> None:
     )
 
     assert result["output"]["accepted"] is False
-    assert result["output"]["reason_id"] == ReasonID.INVALID_ENVELOPE.value
+    assert result["output"]["reason_id"] == ReasonID.INVALID_OUTPUT.value
     assert result["receipt"] is not None
     assert result["handoff"] is not None
+    assert result["receipt"]["reason_id"] == ReasonID.INVALID_OUTPUT.value
+    assert result["handoff"]["reason_id"] == ReasonID.INVALID_OUTPUT.value
+
+
+def test_process_with_policy_rejects_manifest_adapter_identity_drift() -> None:
+    manifest = dict(BASE_MANIFEST)
+    manifest["adapter_id"] = "wallet"
+
+    result = _gateway(_AlignedAdapter(), manifest).process_with_policy(
+        "poi",
+        SOURCE_INPUT,
+        VALID_POLICY_PACK,
+    )
+
+    assert result["accepted"] is False
+    assert result["reason_id"] == ReasonID.INVALID_ENVELOPE.value
