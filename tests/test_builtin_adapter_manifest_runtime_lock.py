@@ -104,7 +104,7 @@ def test_poi_manifest_declares_real_runtime_reason_ids() -> None:
     assert unsupported_model["reason_id"] == ReasonID.UNSUPPORTED_MODEL.value
     assert unsupported_model["reason_id"] in manifest_reasons
 
-    assert denied_action["reason_id"] == ReasonID.POLICY_DENIED.value
+    assert denied_action["reason_id"] == ReasonID.ADAPTER_VALIDATION_FAILED.value
     assert denied_action["reason_id"] in manifest_reasons
 
 
