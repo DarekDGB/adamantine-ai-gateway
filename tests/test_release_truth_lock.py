@@ -42,21 +42,22 @@ EXPECTED_PUBLIC_API_SYMBOLS = {
 
 EXPECTED_README_PHRASES = [
     "Fail-closed, contract-first gateway for untrusted AI-originated work.",
-    "PolicyPack V1",
-    "AI Gateway Handoff V1",
+    "## System Diagram",
+    "## v1.0.0 Highlights",
+    "Artifact-chain invariants locked",
+    "Receipt-path manifest/runtime enforcement parity locked",
+    "Deterministic fallback artifacts locked",
     "process_governed",
-    "Manifest-required execution mode",
-    "Receipt-required execution mode",
-    "100% test coverage enforced",
+    "MIT License © DarekDGB",
 ]
 
-EXPECTED_CHANGELOG_V0_5_0_PHRASES = [
-    "## [v0.5.0] - 2026-03-31",
-    "PolicyPack V1 contract (`POLICYPACK_V1.md`)",
-    "AI Gateway Handoff V1 contract (`AI_GATEWAY_HANDOFF_V1.md`)",
-    "Governed gateway processing path (`process_governed`)",
-    "Manifest-required execution mode (no manifest → fail-closed)",
-    "Receipt-required execution mode (always produces evidence)",
+EXPECTED_CHANGELOG_V1_0_0_PHRASES = [
+    "## [v1.0.0] - 2026-04-07",
+    "Public API freeze lock",
+    "Artifact-chain invariant lock across manifest → envelope → output → receipt → handoff",
+    "Receipt-path manifest/runtime enforcement parity lock",
+    "Deterministic fallback artifact lock",
+    "Release-truth / doc-contract parity lock",
     "100% test coverage enforced",
 ]
 
@@ -71,7 +72,7 @@ def _pyproject_version() -> str:
 
 
 def test_runtime_version_matches_pyproject_and_installed_metadata() -> None:
-    assert __version__ == "0.5.0"
+    assert __version__ == "1.0.0"
     assert _pyproject_version() == __version__
     assert metadata.version("adamantine-ai-gateway") == __version__
 
@@ -80,10 +81,8 @@ def test_readme_and_changelog_match_current_release_version() -> None:
     readme = _read(README_PATH)
     changelog = _read(CHANGELOG_PATH)
 
-    assert "## v0.5.0 Highlights" in readme
-    assert "## [v0.5.0] - 2026-03-31" in changelog
-    assert "v1.0.0" not in readme
-    assert "## [v1.0.0]" not in changelog
+    assert "## v1.0.0 Highlights" in readme
+    assert "## [v1.0.0] - 2026-04-07" in changelog
 
 
 def test_readme_contains_current_release_truth_phrases() -> None:
@@ -96,7 +95,7 @@ def test_readme_contains_current_release_truth_phrases() -> None:
 def test_changelog_contains_current_release_truth_phrases() -> None:
     changelog = _read(CHANGELOG_PATH)
 
-    for phrase in EXPECTED_CHANGELOG_V0_5_0_PHRASES:
+    for phrase in EXPECTED_CHANGELOG_V1_0_0_PHRASES:
         assert phrase in changelog
 
 
@@ -125,16 +124,16 @@ def test_readme_current_release_claims_are_backed_by_runtime_surface() -> None:
     assert hasattr(import_module("ai_gateway.receipt"), "build_receipt_v1")
 
 
-def test_changelog_v0_5_0_claims_are_backed_by_files_present_in_repo() -> None:
+def test_changelog_v1_0_0_claims_are_backed_by_files_present_in_repo() -> None:
     assert (CONTRACTS_DIR / "POLICYPACK_V1.md").exists()
     assert (CONTRACTS_DIR / "AI_GATEWAY_HANDOFF_V1.md").exists()
     assert (REPO_ROOT / "ai_gateway" / "policy.py").exists()
     assert (REPO_ROOT / "ai_gateway" / "handoff.py").exists()
 
 
-def test_release_truth_lock_is_strict_about_current_pre_v1_state() -> None:
+def test_release_truth_lock_is_strict_about_current_v1_state() -> None:
     readme = _read(README_PATH)
     changelog = _read(CHANGELOG_PATH)
 
-    assert "v0.5.0 establishes Adamantine AI Gateway" in readme
-    assert "This release transforms the Adamantine AI Gateway" in changelog
+    assert "v1.0.0 establishes Adamantine AI Gateway as a locked deterministic enforcement boundary" in readme
+    assert "This release establishes Adamantine AI Gateway as a locked deterministic enforcement boundary" in changelog
