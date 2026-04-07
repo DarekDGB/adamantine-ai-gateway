@@ -264,10 +264,13 @@ def test_process_with_receipt_falls_back_to_internal_error_receipt_when_receipt_
 
     original_builder = AIGateway.process_with_receipt.__globals__["build_receipt_v1"]
 
-    with patch(
-        "ai_gateway.gateway.build_receipt_v1",
-        side_effect=[RuntimeError("boom"), original_builder],
-    ):
+    def _receipt_side_effect(*args, **kwargs):
+        if not hasattr(_receipt_side_effect, "called"):
+            _receipt_side_effect.called = True
+            raise RuntimeError("boom")
+        return original_builder(*args, **kwargs)
+
+    with patch("ai_gateway.gateway.build_receipt_v1", side_effect=_receipt_side_effect):
         result = gateway.process_with_receipt(
             "poi",
             {
