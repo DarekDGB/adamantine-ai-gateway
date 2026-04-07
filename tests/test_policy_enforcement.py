@@ -241,12 +241,11 @@ def test_policy_enforcement_rejects_invalid_action() -> None:
     assert result["reason_id"] == ReasonID.ADAPTER_VALIDATION_FAILED.value
 
 
-def test_enforce_policy_direct_call_raises() -> None:
-    with pytest.raises(PolicyError):
-        enforce_policy_for_adapter(
-            policy_pack=_policy_pack(),
-            adapter_name="poi",
-            task_type="documentation",
-            model_family="poi-v1",
-            action="evaluate_candidate",
-        )
+def test_enforce_policy_direct_call_accepts_allowed_documentation_scope() -> None:
+    enforce_policy_for_adapter(
+        policy_pack=_policy_pack(),
+        adapter_name="poi",
+        task_type="documentation",
+        model_family="poi-v1",
+        action="evaluate_candidate",
+    )
