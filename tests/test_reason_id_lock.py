@@ -199,7 +199,7 @@ def test_policy_rejections_map_to_explicit_specific_reason_ids() -> None:
 
     assert unsupported_task["reason_id"] == ReasonID.UNSUPPORTED_TASK.value
     assert unsupported_model["reason_id"] == ReasonID.UNSUPPORTED_MODEL.value
-    assert denied_action["reason_id"] == ReasonID.POLICY_DENIED.value
+    assert denied_action["reason_id"] == ReasonID.ADAPTER_VALIDATION_FAILED.value
 
 
 def test_unregistered_adapter_maps_to_adapter_not_registered() -> None:
