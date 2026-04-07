@@ -1,3 +1,6 @@
+import pytest
+
+from ai_gateway.errors import ValidationError
 from ai_gateway.gateway import AIGateway
 from ai_gateway.reason_ids import ReasonID
 from ai_gateway.registry import AdapterRegistry
@@ -191,15 +194,13 @@ def test_process_governed_rejects_output_task_type_drift() -> None:
     assert result["handoff"]["reason_id"] == ReasonID.INVALID_OUTPUT.value
 
 
-def test_process_with_policy_rejects_manifest_adapter_identity_drift() -> None:
+def test_registry_rejects_manifest_adapter_identity_drift_before_runtime() -> None:
     manifest = dict(BASE_MANIFEST)
     manifest["adapter_id"] = "wallet"
 
-    result = _gateway(_AlignedAdapter(), manifest).process_with_policy(
-        "poi",
-        SOURCE_INPUT,
-        VALID_POLICY_PACK,
-    )
+    registry = AdapterRegistry()
 
-    assert result["accepted"] is False
-    assert result["reason_id"] == ReasonID.INVALID_ENVELOPE.value
+    with pytest.raises(ValidationError) as excinfo:
+        registry.register("poi", _AlignedAdapter(), manifest=manifest)
+
+    assert str(excinfo.value) == ReasonID.SCHEMA_VIOLATION.value
