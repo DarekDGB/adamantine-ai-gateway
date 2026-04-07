@@ -1,3 +1,4 @@
+from ai_gateway.errors import ValidationError
 from ai_gateway.gateway import AIGateway
 from ai_gateway.reason_ids import ReasonID
 from ai_gateway.registry import AdapterRegistry
@@ -42,10 +43,18 @@ class _ValidAdapter:
             "adapter": "poi",
             "task_type": envelope["task_type"],
             "accepted": True,
-            "reason_id": ReasonID.ACCEPTED.value,
+            "reason_id": "ACCEPTED",
             "output_payload": {},
             "context_hash": "",
         }
+
+
+class _MissingFieldAdapter:
+    def build_envelope(self, source_input: dict) -> dict:
+        raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
+
+    def build_output(self, envelope: dict) -> dict:
+        raise AssertionError("should not be called")
 
 
 BASE_MANIFEST = {
@@ -60,7 +69,7 @@ BASE_MANIFEST = {
     "output_contract": "ai_gateway_output_v1",
     "determinism_constraints": ["canonical_json_only"],
     "failure_reason_ids": [
-        ReasonID.ACCEPTED.value,
+        "ACCEPTED",
         ReasonID.INVALID_ENVELOPE.value,
         ReasonID.INVALID_OUTPUT.value,
         ReasonID.SCHEMA_VIOLATION.value,
@@ -76,9 +85,9 @@ BASE_MANIFEST = {
 }
 
 
-def _registered_gateway(manifest: dict) -> AIGateway:
+def _registered_gateway(adapter: object, manifest: dict) -> AIGateway:
     registry = AdapterRegistry()
-    registry.register("poi", _ValidAdapter(), manifest=manifest)
+    registry.register("poi", adapter, manifest=manifest)
     return AIGateway(registry)
 
 
@@ -87,7 +96,7 @@ def _manifest_reason_ids(manifest: dict) -> set[str]:
 
 
 def _all_known_reason_id_values() -> set[str]:
-    return {reason.value for reason in ReasonID}
+    return {reason.value for reason in ReasonID} | {"ACCEPTED"}
 
 
 def _required_fail_closed_reasons() -> set[str]:
@@ -116,11 +125,11 @@ def test_manifest_failure_reason_ids_contain_no_duplicates() -> None:
 
 
 def test_manifest_failure_reason_ids_include_accepted_for_successful_adapter() -> None:
-    result = _registered_gateway(BASE_MANIFEST).process("poi", SOURCE_INPUT)
+    result = _registered_gateway(_ValidAdapter(), BASE_MANIFEST).process("poi", SOURCE_INPUT)
 
     assert result["accepted"] is True
-    assert result["reason_id"] == ReasonID.ACCEPTED.value
-    assert ReasonID.ACCEPTED.value in BASE_MANIFEST["failure_reason_ids"]
+    assert result["reason_id"] == "ACCEPTED"
+    assert "ACCEPTED" in BASE_MANIFEST["failure_reason_ids"]
 
 
 def test_manifest_failure_reason_ids_include_required_fail_closed_reasons() -> None:
@@ -130,7 +139,7 @@ def test_manifest_failure_reason_ids_include_required_fail_closed_reasons() -> N
 
 
 def test_manifest_failure_reason_ids_cover_real_emitted_policy_reasons() -> None:
-    gateway = _registered_gateway(BASE_MANIFEST)
+    gateway = _registered_gateway(_ValidAdapter(), BASE_MANIFEST)
 
     unsupported_task = gateway.process_with_policy(
         "poi",
@@ -161,21 +170,14 @@ def test_manifest_failure_reason_ids_cover_real_emitted_policy_reasons() -> None
 
 
 def test_manifest_failure_reason_ids_cover_real_emitted_validation_reasons() -> None:
-    gateway = _registered_gateway(BASE_MANIFEST)
-
-    missing_field = gateway.process(
-        "poi",
-        {
-            "task_type": "code_review",
-            "model_family": "poi-v1",
-        },
-    )
+    gateway = _registered_gateway(_MissingFieldAdapter(), BASE_MANIFEST)
+    result = gateway.process("poi", SOURCE_INPUT)
 
     manifest_reasons = _manifest_reason_ids(BASE_MANIFEST)
 
-    assert missing_field["accepted"] is False
-    assert missing_field["reason_id"] == ReasonID.MISSING_REQUIRED_FIELD.value
-    assert missing_field["reason_id"] in manifest_reasons
+    assert result["accepted"] is False
+    assert result["reason_id"] == ReasonID.MISSING_REQUIRED_FIELD.value
+    assert result["reason_id"] in manifest_reasons
 
 
 def test_manifest_missing_emitted_reason_is_detected() -> None:
@@ -186,7 +188,7 @@ def test_manifest_missing_emitted_reason_is_detected() -> None:
         if reason != ReasonID.UNSUPPORTED_TASK.value
     ]
 
-    gateway = _registered_gateway(manifest)
+    gateway = _registered_gateway(_ValidAdapter(), manifest)
     result = gateway.process_with_policy(
         "poi",
         {**SOURCE_INPUT, "task_type": "documentation"},
