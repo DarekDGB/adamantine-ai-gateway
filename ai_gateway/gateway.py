@@ -61,7 +61,11 @@ class AIGateway:
                 "receipt": None,
             }
 
-        envelope, output = self._process_components(adapter_name, source_input)
+        envelope, output = self._process_components_with_manifest(
+            adapter_name=adapter_name,
+            source_input=source_input,
+            manifest=manifest,
+        )
 
         try:
             receipt = build_receipt_v1(
@@ -180,6 +184,93 @@ class AIGateway:
         try:
             envelope = adapter.build_envelope(source_input)
             return envelope, adapter.build_output(envelope)
+
+        except ValidationError as exc:
+            return (
+                self._fail_closed_envelope(adapter_name, source_input),
+                self._fail_closed(
+                    adapter_name,
+                    self._reason_id_from_error(exc, ReasonID.SCHEMA_VIOLATION),
+                    source_input,
+                ),
+            )
+
+        except ContractError as exc:
+            return (
+                self._fail_closed_envelope(adapter_name, source_input),
+                self._fail_closed(
+                    adapter_name,
+                    self._reason_id_from_error(exc, ReasonID.INVALID_ENVELOPE),
+                    source_input,
+                ),
+            )
+
+        except PolicyError as exc:
+            return (
+                self._fail_closed_envelope(adapter_name, source_input),
+                self._fail_closed(
+                    adapter_name,
+                    self._reason_id_from_error(exc, ReasonID.POLICY_DENIED),
+                    source_input,
+                ),
+            )
+
+        except AdapterError as exc:
+            return (
+                self._fail_closed_envelope(adapter_name, source_input),
+                self._fail_closed(
+                    adapter_name,
+                    self._reason_id_from_error(
+                        exc,
+                        ReasonID.ADAPTER_VALIDATION_FAILED,
+                    ),
+                    source_input,
+                ),
+            )
+
+        except Exception:
+            return (
+                self._fail_closed_envelope(adapter_name, source_input),
+                self._fail_closed(
+                    adapter_name,
+                    ReasonID.INTERNAL_ERROR,
+                    source_input,
+                ),
+            )
+
+    def _process_components_with_manifest(
+        self,
+        adapter_name: str,
+        source_input: dict,
+        manifest: Manifest,
+    ) -> tuple[Envelope, Output]:
+        try:
+            adapter = self._registry.get(adapter_name)
+        except AdapterError as exc:
+            return (
+                self._fail_closed_envelope(adapter_name, source_input),
+                self._fail_closed(
+                    adapter_name,
+                    self._reason_id_from_error(exc, ReasonID.ADAPTER_NOT_REGISTERED),
+                    source_input,
+                ),
+            )
+
+        try:
+            envelope = adapter.build_envelope(source_input)
+            self._enforce_manifest_envelope_alignment(
+                adapter_name=adapter_name,
+                manifest=manifest,
+                envelope=envelope,
+            )
+
+            output = adapter.build_output(envelope)
+            self._enforce_manifest_output_alignment(
+                manifest=manifest,
+                envelope=envelope,
+                output=output,
+            )
+            return envelope, output
 
         except ValidationError as exc:
             return (
