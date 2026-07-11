@@ -1,9 +1,27 @@
+import json
 from typing import Any
 
+from ai_gateway.canonical import canonical_json_bytes
 from ai_gateway.errors import AdapterError, ValidationError
 from ai_gateway.reason_ids import ReasonID
 from ai_gateway.types import Manifest
 from ai_gateway.validation import validate_manifest_v1
+
+
+def _snapshot_manifest(manifest: Manifest) -> Manifest:
+    """Return a validated manifest containing only fresh JSON built-ins."""
+
+    try:
+        snapshot = json.loads(canonical_json_bytes(manifest))
+        return validate_manifest_v1(snapshot)
+    except Exception as exc:
+        raise ValidationError(ReasonID.SCHEMA_VIOLATION.value) from exc
+
+
+def _require_registry_name(name: Any) -> str:
+    if type(name) is not str or not name:
+        raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+    return name
 
 
 class AdapterRegistry:
@@ -12,36 +30,43 @@ class AdapterRegistry:
         self._manifests: dict[str, Manifest] = {}
 
     def register(self, name: str, adapter: Any, manifest: Manifest | None = None) -> None:
-        if not name or not isinstance(name, str):
-            raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+        clean_name = _require_registry_name(name)
 
-        if name in self._adapters:
+        if clean_name in self._adapters:
             raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
 
         resolved_manifest = self._resolve_manifest(adapter, manifest)
+        normalized_manifest = (
+            _snapshot_manifest(resolved_manifest)
+            if resolved_manifest is not None
+            else None
+        )
 
-        if resolved_manifest is not None and resolved_manifest["adapter_id"] != name:
+        if normalized_manifest is not None and normalized_manifest["adapter_id"] != clean_name:
             raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
 
-        self._adapters[name] = adapter
+        self._adapters[clean_name] = adapter
 
-        if resolved_manifest is not None:
-            # store a copy to prevent external mutation
-            self._manifests[name] = dict(resolved_manifest)
+        if normalized_manifest is not None:
+            self._manifests[clean_name] = normalized_manifest
 
     def get(self, name: str) -> Any:
-        if name not in self._adapters:
+        clean_name = _require_registry_name(name)
+        if clean_name not in self._adapters:
             raise AdapterError(ReasonID.ADAPTER_NOT_REGISTERED.value)
-        return self._adapters[name]
+        return self._adapters[clean_name]
 
     def get_manifest(self, name: str) -> Manifest:
-        if name not in self._adapters:
+        clean_name = _require_registry_name(name)
+        if clean_name not in self._adapters:
             raise AdapterError(ReasonID.ADAPTER_NOT_REGISTERED.value)
 
-        if name not in self._manifests:
+        if clean_name not in self._manifests:
             raise AdapterError(ReasonID.ADAPTER_VALIDATION_FAILED.value)
 
-        return self._manifests[name]
+        # Return a fresh normalized snapshot so callers cannot mutate the
+        # registered manifest, including through custom container subclasses.
+        return _snapshot_manifest(self._manifests[clean_name])
 
     def names(self) -> tuple[str, ...]:
         return tuple(sorted(self._adapters.keys()))
