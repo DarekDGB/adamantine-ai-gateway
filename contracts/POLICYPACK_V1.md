@@ -92,6 +92,37 @@ String. Human-readable description of scope or intent.
 
 ---
 
+## Trust and Evidence Boundary
+
+`POLICYPACK_V1` validation proves the shape and allowed values of a policy-pack
+input. It does not authenticate the source of that input.
+
+The current `process_with_policy(...)` and `process_governed(...)` APIs receive
+the policy pack from their caller. The V1 contract does not provide a trusted
+policy registry, verifier-controlled allowlist, signature, or expected digest.
+
+The fields `policypack_id` and `policypack_version_id` are validated labels.
+They are not trust anchors. The V1 output, receipt, and handoff contracts contain
+no policy-pack ID, version, hash, or policy reference. Distinct policy packs that
+permit the same request can therefore produce byte-identical V1 artifacts.
+
+Consequences:
+
+- a V1 output, receipt, or handoff does not prove which policy pack was used;
+- a downstream consumer must not infer policy identity from `policy_decision`,
+  `reason_id`, or any other V1 artifact field;
+- a deployment may pin a policy pack in trusted local configuration, but that
+  trust exists outside the V1 evidence chain;
+- a consumer that requires proof of an exact policy pack must use a separately
+  versioned policy-binding contract and a verifier-controlled expected policy
+  reference;
+- no policy-identity field may be added silently to a frozen V1 artifact.
+
+V1 artifacts remain deterministic evidence, but they are policy-identity
+unbound.
+
+---
+
 ## Determinism Rules
 
 - Canonical JSON only
@@ -111,6 +142,9 @@ String. Human-readable description of scope or intent.
 - grant wallet signing authority
 - override manifest identity
 - introduce time-based or random behavior
+- authenticate its caller or source
+- bind its identity or complete content to V1 output, receipt, or handoff
+- prove which policy pack produced a downstream V1 artifact
 
 ---
 
