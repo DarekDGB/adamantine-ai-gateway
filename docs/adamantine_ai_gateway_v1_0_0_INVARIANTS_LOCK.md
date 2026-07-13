@@ -1,20 +1,24 @@
 # Adamantine AI Gateway — v1.0.0 Invariants Lock
 
-**Status:** LOCKED DRAFT FOR BUILD SEQUENCING  
-**Target milestone:** `v1.0.0`  
-**Current repo state reviewed:** `v0.5.0` ZIP provided by user  
+**Status:** LOCKED V1.0.0 BOUNDARY RECORD  
+**Release boundary:** `v1.0.0`  
+**Current repo state reviewed:** `v1.0.0` fresh V4.9-D1 source  
 **Owner attribution:** DarekDGB
 
 ---
 
 ## Purpose
 
-This document freezes the **security, determinism, contract, and release invariants** that must be true before Adamantine AI Gateway can be tagged `v1.0.0`.
+This document preserves the **security, determinism, contract, and release invariants** that define the Adamantine AI Gateway `v1.0.0` boundary and must remain true during later compatibility work.
 
 It exists to prevent scope drift, silent weakening, and false completion.
 
 This is not a feature wishlist.
 This is a **boundary lock document**.
+
+Historical build-sequencing and exit-criteria sections are retained as the
+record used to establish the `v1.0.0` boundary. They do not describe the current
+repository as a pre-release or `v0.5.0` state.
 
 ---
 
@@ -111,7 +115,11 @@ The full evidence chain must remain internally coherent.
 
 A governed handoff must bind together a coherent chain:
 
-`manifest -> envelope -> output -> receipt -> handoff -> policy reference`
+`manifest -> envelope -> output -> receipt -> handoff`
+
+Policy evaluation is a required governed-path precondition, but the frozen V1
+output, receipt, and handoff artifacts do not contain a policy reference. They
+must not be described as proving which policy pack was evaluated.
 
 ### Required locks
 
@@ -119,7 +127,8 @@ A governed handoff must bind together a coherent chain:
 - action requested must be declared by manifest capability
 - envelope contents used for execution must match contents represented in receipt / handoff chain
 - output object used in receipt must be the exact output represented by handoff
-- policy pack reference in handoff must correspond to policy evaluation actually used
+- policy-pack identity must not be inferred from a V1 handoff, receipt, policy decision, or reason ID
+- any future exact-policy claim requires a separately versioned binding to the complete validated policy snapshot and the artifact chain
 - tampering with any linked object must invalidate downstream trust
 
 ### Required proof
@@ -127,7 +136,26 @@ A governed handoff must bind together a coherent chain:
 - mismatch-chain negative tests
 - handoff tamper tests
 - cross-object hash / identity lock tests
+- regression proof that distinct policy packs can produce identical V1 artifacts
 - no partially coherent evidence bundle accepted as valid governed output
+
+### V4.9-D policy-pack identity decision
+
+The current governed API accepts a caller-supplied policy pack. No trusted
+policy loader, pinned registry, expected policy digest, or authenticated policy
+source exists in V1. The `policypack_id` and `policypack_version_id` fields are
+therefore validated labels, not evidence-chain trust anchors.
+
+V1 remains frozen and policy-identity unbound. A downstream consumer may handle
+V1 as advisory evidence, but it must not claim that V1 proves an active policy
+identity. Where exact policy identity is required, missing versioned binding is
+a failed precondition; there must be no silent fallback to V1.
+
+The selected forward path is a new versioned policy-binding artifact. It must
+bind the canonical hash and declared ID/version of one immutable validated
+policy snapshot to the receipt and handoff produced from that same governed
+operation. This requirement does not authorize a silent field addition to any
+frozen V1 contract.
 
 ---
 
