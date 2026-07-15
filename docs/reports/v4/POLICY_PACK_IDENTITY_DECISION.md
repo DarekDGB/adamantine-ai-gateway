@@ -1,21 +1,24 @@
 # AI Gateway Policy-Pack Identity Decision
 
 Author attribution: **DarekDGB**  
-Controlled step: `Shield V4.9-D1`  
+Decision step: `Shield V4.9-D1`  
 Decision status: locked  
 Decision: new versioned policy binding required  
-Runtime and schema change in this step: none
+Producer implementation status: `Shield V4.9-D2` implemented in this source  
+Frozen V1 schema change: none
 
 ---
 
 ## 1. Purpose
 
 This document records whether frozen AI Gateway V1 evidence proves the identity
-of the policy pack used by a governed operation. It also locks the required
-AdamantineOS consumption boundary before a new contract is designed.
+of the policy pack used by a governed operation. It also records the
+AdamantineOS consumption boundary locked by D1 and the separate Gateway
+producer contract implemented by D2.
 
-The decision is evidence based. It does not add fields to, reinterpret, or
-replace any frozen V1 output, receipt, or handoff contract.
+The decision is evidence based. V4.9-D2 implements it as separate versioned
+producer artifacts without adding fields to, reinterpreting, or replacing any
+frozen V1 output, receipt, or handoff contract.
 
 ---
 
@@ -94,10 +97,10 @@ No V1 field is added, removed, or reinterpreted by this decision.
 
 ---
 
-## 5. Required producer design
+## 5. Implemented producer design
 
-A later controlled step must introduce a separately versioned policy-binding
-artifact. At minimum, its normative design must bind:
+V4.9-D2 introduces `AI_GATEWAY_POLICY_BINDING_V1` as a separately versioned
+artifact. Its exact design binds:
 
 ```text
 binding contract version
@@ -121,13 +124,30 @@ Producer requirements:
   governed operation;
 - reject missing, malformed, unknown, oversized, or mismatched binding data;
 - prevent caller mutation from changing the captured snapshot;
-- keep all existing V1 artifacts and APIs byte-for-byte compatible;
+- keep all frozen V1 artifact shapes and Gateway runtime result shapes
+  byte-for-byte compatible; any exporter input hardening must be explicit;
 - never add approval, signing, broadcast, override, bypass, downgrade, rescue,
   or execution authority.
 
-The deterministic binding proves artifact-to-policy-reference consistency. It
-is not producer authentication, remote attestation, a signature, or proof that
-untrusted runtime code executed honestly.
+The implemented producer method is:
+
+```text
+AIGateway.process_governed_with_policy_binding_v1(...)
+```
+
+It captures the complete policy snapshot before registry or adapter callbacks,
+uses the captured snapshot for enforcement, checks exact built-in
+envelope/output/receipt/handoff linkage, and fixes the receipt profile to
+`canonical_sha256_no_time_v1`. Output and handoff context hashes must equal the
+canonical envelope hash. A genuine policy denial binds the actual evaluated
+envelope. If policy evaluation was not reached, or capture, adapter,
+chain, hashing, canonicalization, or builder work fails, receipt, handoff, and
+policy binding are all absent.
+
+The deterministic binding provides content linkage between the declared policy
+reference and the exact receipt and handoff. It is not producer authentication,
+source provenance, freshness, replay protection, remote attestation, a
+signature, or proof that untrusted runtime code executed honestly.
 
 ---
 
@@ -146,7 +166,7 @@ For frozen V1 evidence:
   adapter identity, Gateway version, Q-ID identity, or any external label;
 - V1 must not satisfy a check that requires an exact Gateway policy identity.
 
-For the future policy-bound path:
+For the policy-bound producer path:
 
 - AdamantineOS must receive its expected policy ID, version, and digest from
   verifier-controlled trusted local configuration;
@@ -160,6 +180,14 @@ For the future policy-bound path:
 - Q-ID identity keys and Shield decision-evidence keys remain separate and must
   not be reused for this binding.
 
+V4.9-D2 also introduces `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2` and its direct and
+from-result exporters. The V1 from-result helper rejects a present
+`policy_binding` key instead of dropping it. It cannot detect a binding removed
+before the call or use of the direct V1 builder; the D3 consumer must require V2
+where policy identity is required and must not fall back to V1. Independent
+AdamantineOS expected-policy comparison and acceptance remain V4.9-D3 work and
+are not claimed complete by the producer bundle.
+
 ---
 
 ## 7. Controlled sequencing
@@ -168,10 +196,10 @@ The implementation is split to keep each security boundary independently
 reviewable:
 
 ```text
-V4.9-D1  decision, V1 truth correction, and regression lock
-V4.9-D2  Gateway versioned policy-binding producer
-V4.9-D3  AdamantineOS independent policy-binding consumer
-V4.9-E   Gateway Shield v4 compatibility contract
+V4.9-D1  complete: decision, V1 truth correction, and regression lock
+V4.9-D2  implemented here: Gateway versioned policy-binding producer
+V4.9-D3  pending: AdamantineOS independent policy-binding consumer
+V4.9-E   blocked on verified D3: Gateway Shield v4 compatibility contract
 ```
 
 V4.9-E must not begin until V4.9-D3 is verified from fresh post-commit ZIPs.
