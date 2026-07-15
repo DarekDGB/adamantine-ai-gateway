@@ -2,7 +2,7 @@
 
 **Status:** LOCKED V1.0.0 BOUNDARY RECORD  
 **Release boundary:** `v1.0.0`  
-**Current repo state reviewed:** `v1.0.0` fresh V4.9-D1 source  
+**Current repo state reviewed:** `v1.0.0` fresh V4.9-D2 producer source  
 **Owner attribution:** DarekDGB
 
 ---
@@ -40,6 +40,16 @@ From the reviewed repository ZIP and roadmap:
 - 100% coverage discipline is already part of repo culture
 - clean-package execution reality must remain explicit and tested
 
+The current source also contains a separately versioned, post-v1.0.0
+compatibility extension:
+
+- `AI_GATEWAY_POLICY_BINDING_V1`
+- `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2`
+- `process_governed_with_policy_binding_v1(...)`
+
+These additions do not change the six frozen V1 artifact shapes or package
+version `1.0.0`.
+
 This means `v1.0.0` is **not** about adding ideas from scratch.
 It is about freezing and proving the boundary.
 
@@ -67,6 +77,9 @@ Only documented, tested exports are public boundary API.
 - undocumented convenience exports must not leak into public API by accident
 - changing or removing a public export requires version review
 - README / package exports / tests must agree
+- root `ai_gateway.__all__` remains unchanged by V4.9-D2
+- new versioned contract and integration symbols are locked in their explicit
+  `ai_gateway.contracts` and `ai_gateway.integration` namespaces
 
 ### Required proof
 
@@ -88,6 +101,14 @@ All public contracts must be treated as versioned boundary law.
 - `AI_GATEWAY_RECEIPT_V1`
 - `AI_GATEWAY_HANDOFF_V1`
 - `POLICYPACK_V1`
+
+### Post-v1.0.0 compatibility contracts
+
+- `AI_GATEWAY_POLICY_BINDING_V1`
+- `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2`
+
+These contracts are separate extensions. They do not silently add, remove, or
+reinterpret fields in any frozen V1 contract.
 
 ### Required invariant
 
@@ -128,7 +149,7 @@ must not be described as proving which policy pack was evaluated.
 - envelope contents used for execution must match contents represented in receipt / handoff chain
 - output object used in receipt must be the exact output represented by handoff
 - policy-pack identity must not be inferred from a V1 handoff, receipt, policy decision, or reason ID
-- any future exact-policy claim requires a separately versioned binding to the complete validated policy snapshot and the artifact chain
+- any exact-policy claim requires a separately versioned binding to the complete validated policy snapshot and the artifact chain
 - tampering with any linked object must invalidate downstream trust
 
 ### Required proof
@@ -151,11 +172,42 @@ V1 as advisory evidence, but it must not claim that V1 proves an active policy
 identity. Where exact policy identity is required, missing versioned binding is
 a failed precondition; there must be no silent fallback to V1.
 
-The selected forward path is a new versioned policy-binding artifact. It must
-bind the canonical hash and declared ID/version of one immutable validated
+V4.9-D2 implements the selected path as a new versioned policy-binding artifact.
+It binds the canonical hash and declared ID/version of one immutable validated
 policy snapshot to the receipt and handoff produced from that same governed
-operation. This requirement does not authorize a silent field addition to any
-frozen V1 contract.
+operation. This does not authorize a silent field addition to any frozen V1
+contract.
+
+### V4.9-D2 producer status
+
+V4.9-D2 implements the selected producer path:
+
+- the complete PolicyPack V1 object is exact-type checked, bounded, validated,
+  and captured as immutable canonical bytes before registry or adapter
+  callbacks;
+- the captured bytes are materialized for enforcement, so binding identity and
+  policy evaluation use the same snapshot;
+- policy, receipt, and handoff digests use fixed canonical JSON plus SHA-256;
+- envelope, output, receipt, and handoff identity, hash, decision, reason,
+  context, and receipt-profile links are checked before a binding is returned;
+- output and handoff context hashes must equal the canonical envelope hash;
+- a genuine policy denial binds the actual validated envelope evaluated for
+  that operation and uses its canonical hash as the rejected output context;
+- a pre-policy, manifest-capability, adapter, backend, chain, hashing, or
+  builder failure returns a rejected output with receipt, handoff, and policy
+  binding all absent;
+- a missing, blank, non-string, or undeclared action cannot bypass manifest or
+  policy action allowlists and receives no bound evidence;
+- the frozen `process_governed(...)` result remains unbound and unchanged;
+- the V1 from-result helper rejects a present `policy_binding` key and directs
+  callers to `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2`; it cannot detect prior key
+  removal or direct V1-builder use, so D3 must require V2 and prohibit fallback
+  wherever exact policy identity is required.
+
+This is producer-side deterministic content linkage, not authentication,
+source provenance, freshness, replay protection, remote attestation, proof of
+honest execution, or authority. The independent AdamantineOS expected-policy
+consumer remains V4.9-D3 work.
 
 ---
 
@@ -189,8 +241,6 @@ In governed mode, the manifest is part of enforcement, not metadata.
 
 ## 5. Canonical governed-path invariant
 
-There must be one official governed path.
-
 ### Required invariant
 
 `v1.0.0` must have one canonical, stable, documented governed processing flow.
@@ -207,6 +257,19 @@ There must be one official governed path.
 8. receipt built
 9. handoff built
 10. governed result returned
+
+### V4.9-D2 policy-bound extension flow
+
+1. exact bounded PolicyPack V1 captured before callbacks
+2. manifest loaded and adapter envelope captured as exact built-in JSON
+3. the captured policy snapshot evaluated against that envelope
+4. genuine policy denial retains the evaluated envelope; pre-policy failure is
+   not bindable
+5. accepted adapter output captured and validated
+6. receipt and handoff built
+7. full chain, reason semantics, context, and fixed receipt profile checked
+8. separate policy-binding artifact built
+9. exact four-key result returned atomically
 
 ### Required locks
 
@@ -372,6 +435,11 @@ Downstream consumers must know exactly what is stable and what they can trust.
 
 - docs example that matches real tested flow
 - integration example or example fixture bundle checked into repo
+- the V1 from-result helper refuses a present policy-binding key; because it
+  cannot detect prior removal or direct V1-builder use, the D3 consumer must
+  require V2 and prohibit fallback when exact policy identity is required
+- AdamantineOS verifier-controlled expected-policy comparison remains a
+  separate consumer responsibility and is not claimed complete by D2
 
 ---
 
