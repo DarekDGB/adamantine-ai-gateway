@@ -26,6 +26,7 @@ The format follows a simple release log with explicit scope and locked boundary 
 - failure-output labels are bounded, UTF-8 safe, and fail closed to stable fallback values
 - the contract and integration namespaces expose the new explicitly versioned D2 surfaces
 - documentation distinguishes deterministic content linkage from authentication, provenance, freshness, replay protection, honest-execution proof, and authority
+- the release-truth lock rejects invalid UTF-8, C1 controls, and known mojibake markers across repository text files
 
 ### Compatibility
 - frozen V1 envelope, output, receipt, handoff, and PolicyPack artifact shapes remain unchanged
@@ -42,7 +43,7 @@ The format follows a simple release log with explicit scope and locked boundary 
 ### Added
 - Public API freeze lock
 - Version-truth lock across runtime, package metadata, and release files
-- Artifact-chain invariant lock across manifest â envelope â output â receipt â handoff
+- Artifact-chain invariant lock across manifest -> envelope -> output -> receipt -> handoff
 - Stable reason-ID mapping lock
 - Manifest `failure_reason_ids` completeness lock
 - Built-in adapter manifest/runtime parity lock
@@ -102,7 +103,7 @@ This release establishes Adamantine AI Gateway as a locked deterministic enforce
 - AI Gateway Handoff V1 contract (`AI_GATEWAY_HANDOFF_V1.md`)
 - Deterministic handoff builder (`build_handoff_v1`)
 - Governed gateway processing path (`process_governed`)
-- Manifest-required execution mode (no manifest â fail-closed)
+- Manifest-required execution mode (no manifest -> fail-closed)
 - Receipt-required execution mode (always produces evidence)
 - Boundary input limits:
   - Maximum payload depth
