@@ -104,4 +104,4 @@ No package version bump or tag is introduced by V4.9-D2. Package version
 
 ---
 
-**MIT â DarekDGB**
+**MIT - DarekDGB**
