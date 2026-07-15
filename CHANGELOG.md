@@ -6,12 +6,43 @@ The format follows a simple release log with explicit scope and locked boundary 
 
 ---
 
+## [Unreleased]
+
+### Added
+- `AI_GATEWAY_POLICY_BINDING_V1` as a separate seven-field versioned artifact
+- `process_governed_with_policy_binding_v1(...)` as the policy-bound producer path
+- immutable canonical PolicyPack V1 capture before registry or adapter callbacks
+- exact built-in JSON snapshot and resource bounds for policy-bound artifacts
+- full envelope, output, receipt, handoff, reason, context, and determinism-profile linkage checks
+- `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2` producer-side export contract and locked fixture
+- V2 direct and from-result Adamantine evidence exporters
+- negative tests for mutation, splice, downgrade, subclass, profile, backend, malformed-data, and resource-limit cases
+
+### Changed
+- the V1 from-result Adamantine exporter now rejects any result containing `policy_binding` with `POLICY_BOUND_RESULT_REQUIRES_EVIDENCE_V2`
+- genuine policy denials on the D2 path retain and bind the actual evaluated envelope
+- pre-policy, manifest-capability, adapter, backend, chain, hashing, and builder failures return no partial bound evidence
+- missing, blank, non-string, and manifest-undeclared actions fail before policy evaluation and cannot receive bound evidence
+- failure-output labels are bounded, UTF-8 safe, and fail closed to stable fallback values
+- the contract and integration namespaces expose the new explicitly versioned D2 surfaces
+- documentation distinguishes deterministic content linkage from authentication, provenance, freshness, replay protection, honest-execution proof, and authority
+
+### Compatibility
+- frozen V1 envelope, output, receipt, handoff, and PolicyPack artifact shapes remain unchanged
+- existing Gateway runtime paths and root `ai_gateway.__all__` remain unchanged
+- V1 from-result exporter input is intentionally tightened from general
+  `Mapping` values to one exact bounded built-in dictionary snapshot
+- package version remains `1.0.0`; this entry does not create a tag or release
+- AdamantineOS independent expected-policy verification remains V4.9-D3 work
+
+---
+
 ## [v1.0.0] - 2026-04-07
 
 ### Added
 - Public API freeze lock
 - Version-truth lock across runtime, package metadata, and release files
-- Artifact-chain invariant lock across manifest → envelope → output → receipt → handoff
+- Artifact-chain invariant lock across manifest â envelope â output â receipt â handoff
 - Stable reason-ID mapping lock
 - Manifest `failure_reason_ids` completeness lock
 - Built-in adapter manifest/runtime parity lock
@@ -71,7 +102,7 @@ This release establishes Adamantine AI Gateway as a locked deterministic enforce
 - AI Gateway Handoff V1 contract (`AI_GATEWAY_HANDOFF_V1.md`)
 - Deterministic handoff builder (`build_handoff_v1`)
 - Governed gateway processing path (`process_governed`)
-- Manifest-required execution mode (no manifest → fail-closed)
+- Manifest-required execution mode (no manifest â fail-closed)
 - Receipt-required execution mode (always produces evidence)
 - Boundary input limits:
   - Maximum payload depth
