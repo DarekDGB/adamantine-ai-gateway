@@ -1,7 +1,7 @@
 # Adamantine AI Gateway
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/DarekDGB/adamantine-ai-gateway)
-[![Tests](https://img.shields.io/badge/tests-223%20passed-brightgreen.svg)](https://github.com/DarekDGB/adamantine-ai-gateway)
+[![CI](https://github.com/DarekDGB/adamantine-ai-gateway/actions/workflows/ci.yml/badge.svg)](https://github.com/DarekDGB/adamantine-ai-gateway/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/DarekDGB/adamantine-ai-gateway)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -11,7 +11,7 @@ Fail-closed, contract-first gateway for untrusted AI-originated work.
 
 ## Overview
 
-Adamantine AI Gateway is a deterministic boundary layer that converts untrusted AI outputs into structured, validated, policy-controlled evidence.
+Adamantine AI Gateway is a deterministic policy-enforcement and evidence-production boundary that converts untrusted AI outputs into structured, validated, policy-controlled evidence.
 
 It sits between variable external AI systems and the stricter Adamantine stack.
 
@@ -30,15 +30,12 @@ Adamantine AI Gateway
     ├─ enforce policy
     ├─ produce deterministic output
     ├─ produce deterministic receipt
-    └─ produce deterministic handoff
+    ├─ produce deterministic handoff
+    └─ optionally produce a versioned policy binding
     ↓
-Q-ID
+Versioned evidence exporter
     ↓
-Shield v3
-    ↓
-Adaptive Core
-    ↓
-AdamantineOS
+Independent downstream verifier and final policy boundary
 ```
 
 ---
@@ -59,9 +56,31 @@ AdamantineOS
 
 ---
 
+## Unreleased V4.9-D2 Compatibility Extension
+
+V4.9-D2 adds a separate, versioned producer path without changing the frozen
+V1 artifacts, the root package exports, or package version `1.0.0`:
+
+- `AI_GATEWAY_POLICY_BINDING_V1` binds one immutable validated PolicyPack V1
+  snapshot to the exact receipt and handoff from the same governed operation.
+- `process_governed_with_policy_binding_v1(...)` captures the policy before any
+  registry or adapter callback and uses the captured snapshot for enforcement.
+- `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2` packages handoff, receipt, and policy
+  binding as `evidence_only`.
+- the V1 from-result helper rejects a present `policy_binding` key and directs
+  the caller to V2.
+- malformed, pre-policy, backend, chain, or binding failures return no partial
+  receipt, handoff, or policy binding.
+
+This is not a release tag or version bump. The independent AdamantineOS
+expected-policy consumer remains V4.9-D3 work. Shield compatibility is not
+claimed by this D2 producer step.
+
+---
+
 ## What v1.0.0 Means
 
-v1.0.0 is the first fully locked release of Adamantine AI Gateway as a deterministic execution boundary for untrusted AI-originated work.
+v1.0.0 is the first fully locked release of Adamantine AI Gateway as a deterministic policy-enforcement and evidence-production boundary for untrusted AI-originated work.
 
 This release freezes the gateway around these guarantees:
 
@@ -88,10 +107,9 @@ External AI
 → Output
 → Receipt
 → Handoff
-→ Q-ID
-→ Shield v3
-→ Adaptive Core
-→ AdamantineOS
+→ Optional policy binding
+→ Versioned evidence exporter
+→ Independent downstream verification
 ```
 
 ---
@@ -108,7 +126,20 @@ Adds policy enforcement before acceptance.
 Adds deterministic evidence generation.
 
 ### `process_governed`
-Produces output + receipt + handoff as the full governed path.
+Produces the frozen V1 output + receipt + handoff result. This V1 path is
+policy-identity unbound.
+
+### `process_governed_with_policy_binding_v1`
+Produces output + receipt + handoff + `AI_GATEWAY_POLICY_BINDING_V1`. A genuine
+policy denial may produce a complete rejected bound chain over the actual
+evaluated envelope. If policy evaluation was not reached, or if artifact
+construction fails, the three evidence fields are `None`.
+
+### Adamantine evidence exporters
+
+- V1 exports unbound handoff and receipt evidence.
+- V2 exports handoff, receipt, and policy binding evidence.
+- the V1 from-result exporter rejects any result containing `policy_binding`.
 
 ---
 
@@ -117,10 +148,17 @@ Produces output + receipt + handoff as the full governed path.
 - All AI-originated work is treated as untrusted input
 - All accepted artifacts must match strict contract shape
 - All governed flows require manifest/runtime alignment
+- Missing, invalid, or undeclared actions fail before policy-bound evidence
 - All decisions must remain deterministic
 - All failures must remain fail-closed
 - All important rejection paths must emit explicit reason IDs
 - No silent fallback is allowed
+- Policy-bound evidence must use one pre-callback immutable policy snapshot
+- Bound artifacts must pass full envelope/output/receipt/handoff linkage checks
+- Output and handoff context hashes must equal the canonical envelope hash
+- Receipt hash profile is fixed to `canonical_sha256_no_time_v1`
+- The V1 from-result helper cannot detect a binding removed before the call;
+  downstream exact-policy consumers must require V2 and prohibit V1 fallback
 
 No governed path is allowed without:
 
@@ -141,6 +179,8 @@ Current contract surface:
 - `AI_GATEWAY_RECEIPT_V1`
 - `AI_GATEWAY_HANDOFF_V1`
 - `POLICYPACK_V1`
+- `AI_GATEWAY_POLICY_BINDING_V1`
+- `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2`
 
 See `contracts/` for the formal repo contract documents.
 
@@ -157,12 +197,18 @@ See `contracts/` for the formal repo contract documents.
 - No hidden authority
 - No silent fallbacks
 - Adapters translate, gateway verifies and enforces
+- Evidence does not grant approval, signing, broadcast, or execution authority
+- AdamantineOS remains the independent final policy and execution boundary
 
 ---
 
 ## Release Status
 
-v1.0.0 establishes Adamantine AI Gateway as a locked deterministic enforcement boundary for AI systems.
+v1.0.0 remains the locked package release. V4.9-D2 is an unreleased,
+V1-shape-preserving policy-binding producer extension. Its evidence provides
+deterministic content linkage only; it does not authenticate the producer,
+provide freshness or replay protection, prove honest execution, or grant final
+authority.
 
 ---
 
