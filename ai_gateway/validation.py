@@ -27,6 +27,14 @@ from ai_gateway.contracts.policypack_v1 import (
     REQUIRED_ADAPTER_POLICY_FIELDS,
     REQUIRED_POLICYPACK_FIELDS,
 )
+from ai_gateway.contracts.policy_binding_v1 import (
+    AI_GATEWAY_POLICY_BINDING_V1,
+    ALLOWED_POLICY_BINDING_FIELDS,
+    MAX_POLICY_BINDING_ARTIFACT_BYTES,
+    MAX_POLICY_BINDING_ID_LENGTH,
+    POLICY_BINDING_POLICY_PACK_CONTRACT_V1,
+    REQUIRED_POLICY_BINDING_FIELDS,
+)
 from ai_gateway.contracts.receipt_v1 import (
     AI_GATEWAY_RECEIPT_V1,
     ALLOWED_POLICY_DECISIONS,
@@ -293,6 +301,64 @@ def validate_policypack_v1(policy_pack: Any) -> dict:
         "adapter_policies": validated_adapter_policies,
         "notes": data["notes"],
     }
+
+
+def validate_policy_binding_v1(policy_binding: Any) -> dict:
+    if type(policy_binding) is not dict:
+        raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+
+    for key in policy_binding:
+        if type(key) is not str:
+            raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+
+    _reject_unknown_fields(policy_binding, ALLOWED_POLICY_BINDING_FIELDS)
+    for field in REQUIRED_POLICY_BINDING_FIELDS:
+        if field not in policy_binding or policy_binding[field] is None:
+            raise ValidationError(ReasonID.MISSING_REQUIRED_FIELD.value)
+
+    for field in (
+        "policy_binding_version",
+        "policy_pack_contract_version",
+        "policy_pack_id",
+        "policy_pack_version_id",
+        "policy_pack_hash",
+        "receipt_hash",
+        "handoff_hash",
+    ):
+        if type(policy_binding[field]) is not str:
+            raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+        _validate_non_empty_str(policy_binding[field])
+
+    if policy_binding["policy_binding_version"] != AI_GATEWAY_POLICY_BINDING_V1:
+        raise ContractError(ReasonID.INVALID_OUTPUT.value)
+    if (
+        policy_binding["policy_pack_contract_version"]
+        != POLICY_BINDING_POLICY_PACK_CONTRACT_V1
+    ):
+        raise ContractError(ReasonID.INVALID_OUTPUT.value)
+
+    for field in ("policy_pack_id", "policy_pack_version_id"):
+        value = policy_binding[field]
+        if len(value) > MAX_POLICY_BINDING_ID_LENGTH:
+            raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+        try:
+            value.encode("utf-8")
+        except UnicodeError as exc:
+            raise ValidationError(ReasonID.SCHEMA_VIOLATION.value) from exc
+
+    for field in ("policy_pack_hash", "receipt_hash", "handoff_hash"):
+        _validate_hash_hex(policy_binding[field])
+
+    try:
+        from ai_gateway.canonical import canonical_json_bytes
+
+        canonical_size = len(canonical_json_bytes(policy_binding))
+    except (TypeError, ValueError, UnicodeError, OverflowError) as exc:
+        raise ValidationError(ReasonID.SCHEMA_VIOLATION.value) from exc
+    if canonical_size > MAX_POLICY_BINDING_ARTIFACT_BYTES:
+        raise ValidationError(ReasonID.SCHEMA_VIOLATION.value)
+
+    return policy_binding
 
 
 def validate_handoff_v1(handoff: Any) -> dict:
