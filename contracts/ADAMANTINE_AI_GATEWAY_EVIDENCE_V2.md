@@ -112,4 +112,4 @@ consumer cannot independently recompute their hashes from this bundle alone.
 
 ---
 
-**MIT â DarekDGB**
+**MIT - DarekDGB**
