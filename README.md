@@ -21,20 +21,20 @@ It sits between variable external AI systems and the stricter Adamantine stack.
 
 ```text
 External AI
-    ↓
+    v
 Adapter
-    ↓
+    v
 Adamantine AI Gateway
-    ├─ validate contract boundary
-    ├─ enforce manifest/runtime alignment
-    ├─ enforce policy
-    ├─ produce deterministic output
-    ├─ produce deterministic receipt
-    ├─ produce deterministic handoff
-    └─ optionally produce a versioned policy binding
-    ↓
+    |-- validate contract boundary
+    |-- enforce manifest/runtime alignment
+    |-- enforce policy
+    |-- produce deterministic output
+    |-- produce deterministic receipt
+    |-- produce deterministic handoff
+    `-- optionally produce a versioned policy binding
+    v
 Versioned evidence exporter
-    ↓
+    v
 Independent downstream verifier and final policy boundary
 ```
 
@@ -102,14 +102,14 @@ It is now a **locked release surface** for downstream integration.
 
 ```text
 External AI
-→ Adapter
-→ AI Gateway
-→ Output
-→ Receipt
-→ Handoff
-→ Optional policy binding
-→ Versioned evidence exporter
-→ Independent downstream verification
+-> Adapter
+-> AI Gateway
+-> Output
+-> Receipt
+-> Handoff
+-> Optional policy binding
+-> Versioned evidence exporter
+-> Independent downstream verification
 ```
 
 ---
@@ -212,4 +212,4 @@ authority.
 
 ---
 
-MIT License © DarekDGB
+MIT License (c) DarekDGB
