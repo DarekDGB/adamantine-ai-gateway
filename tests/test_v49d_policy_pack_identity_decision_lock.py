@@ -174,11 +174,14 @@ def test_decision_documents_lock_path_two_without_reinterpreting_v1() -> None:
     assert "V1 artifacts remain deterministic evidence, but they are policy-identity\nunbound." in policy_contract
     assert "manifest -> envelope -> output -> receipt -> handoff -> policy reference" not in invariants
     assert "new versioned policy-binding artifact" in invariants
-    assert "**Current repo state reviewed:** `v1.0.0` fresh V4.9-D1 source" in invariants
+    assert "**Current repo state reviewed:** `v1.0.0` fresh V4.9-D2 producer source" in invariants
     assert "**Current repo state reviewed:** `v0.5.0`" not in invariants
     assert "Decision: new versioned policy binding required" in decision
     assert "No V1 field is added, removed, or reinterpreted" in decision
     assert "cannot independently\nrecompute those two hashes" in decision
+    assert "AIGateway.process_governed_with_policy_binding_v1" in decision
+    assert "deterministic binding provides content linkage" in decision
+    assert "V4.9-D3  pending" in decision
 
 
 def test_decision_locks_adamantineos_as_non_final_independent_consumer() -> None:
