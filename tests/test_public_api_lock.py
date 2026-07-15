@@ -38,6 +38,18 @@ EXPECTED_CONTRACTS_PUBLIC_API = [
     "ALLOWED_POLICY_DECISIONS",
     "RECEIPT_DETERMINISM_PROFILE_V1",
     "REQUIRED_RECEIPT_FIELDS",
+    "AI_GATEWAY_POLICY_BINDING_V1",
+    "REQUIRED_POLICY_BINDING_FIELDS",
+    "ALLOWED_POLICY_BINDING_FIELDS",
+]
+
+EXPECTED_INTEGRATION_PUBLIC_API = [
+    "ADAMANTINE_AI_GATEWAY_EVIDENCE_V1",
+    "ADAMANTINE_AI_GATEWAY_EVIDENCE_V2",
+    "build_adamantine_ai_gateway_evidence_from_gateway_result_v1",
+    "build_adamantine_ai_gateway_evidence_from_gateway_result_v2",
+    "build_adamantine_ai_gateway_evidence_v1",
+    "build_adamantine_ai_gateway_evidence_v2",
 ]
 
 
@@ -80,6 +92,16 @@ def test_contracts_public_api_symbols_exist() -> None:
     ]
 
     assert missing == []
+
+
+def test_integration_public_api_is_version_locked() -> None:
+    integration_module = import_module("ai_gateway.integration")
+    assert integration_module.__all__ == EXPECTED_INTEGRATION_PUBLIC_API
+    assert len(integration_module.__all__) == len(set(integration_module.__all__))
+    assert all(
+        hasattr(integration_module, symbol)
+        for symbol in EXPECTED_INTEGRATION_PUBLIC_API
+    )
 
 
 def test_installed_package_metadata_version_matches_runtime_version() -> None:
