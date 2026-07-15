@@ -130,4 +130,4 @@ independent acceptance are V4.9-D3 work.
 
 ---
 
-**MIT â DarekDGB**
+**MIT - DarekDGB**
