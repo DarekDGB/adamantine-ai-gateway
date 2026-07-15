@@ -11,6 +11,30 @@ README_PATH = REPO_ROOT / "README.md"
 CHANGELOG_PATH = REPO_ROOT / "CHANGELOG.md"
 PYPROJECT_PATH = REPO_ROOT / "pyproject.toml"
 CONTRACTS_DIR = REPO_ROOT / "contracts"
+TEXT_FILE_SUFFIXES = frozenset({".json", ".md", ".py", ".toml", ".yaml", ".yml"})
+TEXT_FILE_NAMES = frozenset({".gitignore", "LICENSE"})
+IGNORED_TEXT_PATH_PARTS = frozenset(
+    {".git", ".pytest_cache", ".venv", "__pycache__", "build", "dist"}
+)
+MOJIBAKE_LEAD_CHARACTERS = (
+    "\u00c2",
+    "\u00c3",
+    "\u00e2",
+    "\u00ef\u00bb\u00bf",
+    "\u00f0",
+    "\ufeff",
+    "\ufffd",
+)
+MOJIBAKE_REGRESSION_SAMPLES = (
+    "\u00c2\u00a9",
+    "\u00e2\u0086\u0092",
+    "\u00e2\u0080\u0094",
+    "\u00e2\u0088\u0088",
+    "\u00ef\u00bb\u00bf",
+    "\ufeff",
+    "\ufffd",
+    "\u0085",
+)
 
 
 EXPECTED_CONTRACT_DOCS = {
@@ -55,7 +79,7 @@ EXPECTED_README_PHRASES = [
     "process_governed_with_policy_binding_v1",
     "ADAMANTINE_AI_GATEWAY_EVIDENCE_V2",
     "deterministic content linkage only",
-    "MIT License Â© DarekDGB",
+    "MIT License (c) DarekDGB",
 ]
 
 EXPECTED_CHANGELOG_UNRELEASED_PHRASES = [
@@ -70,7 +94,7 @@ EXPECTED_CHANGELOG_UNRELEASED_PHRASES = [
 EXPECTED_CHANGELOG_V1_0_0_PHRASES = [
     "## [v1.0.0] - 2026-04-07",
     "Public API freeze lock",
-    "Artifact-chain invariant lock across manifest â envelope â output â receipt â handoff",
+    "Artifact-chain invariant lock across manifest -> envelope -> output -> receipt -> handoff",
     "Receipt-path manifest/runtime enforcement parity lock",
     "Deterministic fallback artifact lock",
     "Release-truth / doc-contract parity lock",
@@ -80,6 +104,26 @@ EXPECTED_CHANGELOG_V1_0_0_PHRASES = [
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def _repository_text_paths() -> list[Path]:
+    paths = []
+    for path in REPO_ROOT.rglob("*"):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(REPO_ROOT)
+        if IGNORED_TEXT_PATH_PARTS.intersection(relative.parts):
+            continue
+        if path.suffix not in TEXT_FILE_SUFFIXES and path.name not in TEXT_FILE_NAMES:
+            continue
+        paths.append(path)
+    return sorted(paths)
+
+
+def _contains_mojibake(text: str) -> bool:
+    return any(marker in text for marker in MOJIBAKE_LEAD_CHARACTERS) or any(
+        "\u0080" <= character <= "\u009f" for character in text
+    )
 
 
 def _pyproject_version() -> str:
@@ -106,6 +150,7 @@ def test_readme_and_changelog_match_current_release_version() -> None:
 def test_readme_contains_current_release_truth_phrases() -> None:
     readme = _read(README_PATH)
 
+    assert readme.isascii()
     for phrase in EXPECTED_README_PHRASES:
         assert phrase in readme
 
@@ -117,6 +162,21 @@ def test_changelog_contains_current_release_truth_phrases() -> None:
         assert phrase in changelog
     for phrase in EXPECTED_CHANGELOG_UNRELEASED_PHRASES:
         assert phrase in changelog
+
+
+def test_repository_text_is_utf8_and_free_of_mojibake() -> None:
+    for path in _repository_text_paths():
+        text = _read(path)
+        relative = path.relative_to(REPO_ROOT)
+        assert not _contains_mojibake(text), f"mojibake in {relative}"
+
+
+def test_mojibake_detector_catches_known_transfer_damage() -> None:
+    for damaged in MOJIBAKE_REGRESSION_SAMPLES:
+        assert _contains_mojibake(damaged)
+
+    for clean in ("MIT \u00a9 DarekDGB", "\u2192", "\u2014", "\u2208"):
+        assert not _contains_mojibake(clean)
 
 
 def test_contract_docs_exist_for_current_runtime_contract_surface() -> None:
