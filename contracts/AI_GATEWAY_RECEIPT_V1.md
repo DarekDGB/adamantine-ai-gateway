@@ -107,7 +107,7 @@ Suggested value:
 2. receipt_version must equal `ai_gateway_receipt_v1`
 3. All required fields must exist
 4. All string fields must be non-empty
-5. policy_decision â {accepted, rejected}
+5. policy_decision must be one of {accepted, rejected}
 6. reason_id must be explicit and unchanged
 7. envelope_hash must be 64-character lowercase hex
 8. output_hash must be 64-character lowercase hex
@@ -120,9 +120,9 @@ Suggested value:
 
 For identical input and identical adapter state:
 
-â identical envelope_hash  
-â identical output_hash  
-â identical receipt  
+-> identical envelope_hash  
+-> identical output_hash  
+-> identical receipt  
 
 The receipt must be generated using:
 - canonical JSON serialization
@@ -132,7 +132,7 @@ The receipt must be generated using:
 
 ---
 
-## Example â Accepted
+## Example - Accepted
 
 ```json
 {
@@ -151,7 +151,7 @@ The receipt must be generated using:
 
 ---
 
-## Example â Rejected
+## Example - Rejected
 
 ```json
 {
@@ -174,9 +174,9 @@ The receipt must be generated using:
 
 If receipt generation fails:
 
-â Gateway MUST fail closed  
-â reason_id = `INTERNAL_ERROR`  
-â No partial receipt allowed  
+-> Gateway MUST fail closed  
+-> reason_id = `INTERNAL_ERROR`  
+-> No partial receipt allowed  
 
 ---
 
