@@ -1,8 +1,11 @@
 # Determinism Rules V1
 
+Author attribution: **DarekDGB**
+
 ## Purpose
 
-This document defines the deterministic behavior required by Adamantine AI Gateway v0.1.0.
+This document defines the deterministic behavior required by the frozen
+Adamantine AI Gateway V1 boundary at package version `1.0.0`.
 
 Determinism is required so that identical structured inputs always produce identical canonical bytes, identical hashes, and identical contract-bound outputs.
 
@@ -11,9 +14,9 @@ This document exists to prevent ambiguity, output drift, hidden state, and non-r
 ## Core Principle
 
 Same structured input  
-→ same canonical representation  
-→ same hash  
-→ same contract outcome
+-> same canonical representation  
+-> same hash  
+-> same contract outcome
 
 If this cannot be guaranteed, the system must fail closed.
 
@@ -28,20 +31,32 @@ These rules apply to:
 - adapter behavior
 - gateway fail-closed handling
 
-They do not yet define full deterministic AI inference. That is outside v0.1.0 scope.
+They do not define deterministic AI inference. That remains outside the
+Gateway boundary.
 
 ## Canonical Serialization Rules
 
-Canonical serialization in v0.1.0 is defined as:
+Canonical serialization is the named profile
+`ai_gateway_canonical_json_v1`, normatively defined in
+`AI_GATEWAY_CANONICAL_JSON_V1.md`.
 
-- JSON serialization
-- UTF-8 encoding
-- sorted object keys
-- no extra whitespace
-- stable separators `(",", ":")`
-- no pretty-print formatting
+The profile freezes:
 
-The canonical serialization helper is the single source of truth for canonical bytes.
+- the supported JSON byte value model and D2 exact-host-type rules;
+- UTF-8 output and a closed string-escaping algorithm;
+- lowercase `\u00xx` escapes for non-short-form controls;
+- raw solidus, U+007F, C1, BMP, and astral scalars;
+- no Unicode normalization;
+- Unicode scalar-value object-key ordering;
+- array-order preservation;
+- minimal base-10 integer output and float rejection;
+- strict duplicate-key rejection at raw-wire boundaries;
+- D2 Unicode scalar-value and canonical-byte resource limits; and
+- no BOM, whitespace, or trailing newline in canonical output.
+
+The normative profile is the source of truth. Literal bytes, the independent
+checker, and differential tests are conformance evidence. Any disagreement is
+a failure; production serializer parity alone is not sufficient evidence.
 
 ### Required Behavior
 
@@ -71,13 +86,14 @@ Encoded as UTF-8 bytes.
 
 ## Hashing Rules
 
-Hashing in v0.1.0 is defined as:
+Hashing for this profile is defined as:
 
 - SHA-256
 - over canonical JSON bytes only
 - lowercase hexadecimal digest output
 
-The hashing helper is the single source of truth for deterministic context hashing.
+No per-artifact byte prefix exists in this V1 profile. Adding one would change
+existing hashes and requires a new versioned contract.
 
 ### Required Behavior
 
@@ -113,7 +129,7 @@ No hidden mutation, randomization, clock access, or environment-dependent behavi
 
 ## Forbidden Sources of Non-Determinism
 
-The following are forbidden in v0.1.0 boundary processing:
+The following are forbidden in V1 boundary processing:
 
 - timestamps
 - random values
@@ -165,11 +181,20 @@ Deterministic behavior must be locked by tests.
 
 At minimum, tests must verify:
 
-- canonical key ordering
+- literal canonical bytes and SHA-256 vectors
+- canonical Unicode scalar-value key ordering
+- string escaping, Unicode, and no-normalization behavior
+- strict duplicate-key and float rejection at raw-wire boundaries
+- expected-equivalence and injective byte pairs
+- exact D2 integer, scalar-count, node, depth, collection, and byte boundaries
+- seeded differential byte fuzzing against an independent encoder
 - stable hash output for equivalent structured values
 - stable contract constants
 - stable fail-closed behavior
 - stable adapter output for identical input
+
+Any minimized differential mismatch must be added to the permanent literal
+fixture before closure.
 
 ## Future Hook Points
 
@@ -180,8 +205,12 @@ Later versions may extend these rules to include:
 - zero-knowledge proof hooks
 - model/version pinning
 - stronger payload schema constraints
+- a separately proven Rust implementation
 
 Any extension must preserve the fail-closed core.
+
+No Rust or SDK conformance claim exists until a Rust strict parser and encoder
+pass the shared literal vectors and Python-to-Rust byte differential fuzzing.
 
 ## Summary
 
