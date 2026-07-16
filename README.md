@@ -73,8 +73,29 @@ V1 artifacts, the root package exports, or package version `1.0.0`:
   receipt, handoff, or policy binding.
 
 This is not a release tag or version bump. The independent AdamantineOS
-expected-policy consumer remains V4.9-D3 work. Shield compatibility is not
+expected-policy consumer remains V4.9-D3B work. Shield compatibility is not
 claimed by this D2 producer step.
+
+---
+
+## Unreleased V4.9-D3A Canonical-Profile Gate
+
+V4.9-D3A names and freezes the byte profile already used by current Gateway
+hashes as `ai_gateway_canonical_json_v1`:
+
+- a closed language-neutral contract defines exact bytes and D2 governed limits;
+- literal golden bytes and hashes are checked in as data;
+- a standalone encoder and strict duplicate-key parser import no Gateway code;
+- accepted, rejected, equivalence, injectivity, and exact-boundary vectors are
+  locked;
+- seeded differential fuzzing compares production and independent bytes before
+  hashes; and
+- existing artifact fields, hashes, public API, and package version remain
+  unchanged.
+
+This gate proves independent Python parity only. It makes no Rust or SDK compatibility claim.
+AdamantineOS policy-bound consumption remains V4.9-D3B work and must not begin
+until D3A is verified from a fresh post-commit ZIP.
 
 ---
 
@@ -157,6 +178,8 @@ construction fails, the three evidence fields are `None`.
 - Bound artifacts must pass full envelope/output/receipt/handoff linkage checks
 - Output and handoff context hashes must equal the canonical envelope hash
 - Receipt hash profile is fixed to `canonical_sha256_no_time_v1`
+- D2/V2 policy-bound hash bytes are fixed to `ai_gateway_canonical_json_v1`
+- Raw-wire consumers must reject duplicate decoded object keys
 - The V1 from-result helper cannot detect a binding removed before the call;
   downstream exact-policy consumers must require V2 and prohibit V1 fallback
 
@@ -179,6 +202,7 @@ Current contract surface:
 - `AI_GATEWAY_RECEIPT_V1`
 - `AI_GATEWAY_HANDOFF_V1`
 - `POLICYPACK_V1`
+- `AI_GATEWAY_CANONICAL_JSON_V1`
 - `AI_GATEWAY_POLICY_BINDING_V1`
 - `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2`
 
@@ -204,11 +228,11 @@ See `contracts/` for the formal repo contract documents.
 
 ## Release Status
 
-v1.0.0 remains the locked package release. V4.9-D2 is an unreleased,
-V1-shape-preserving policy-binding producer extension. Its evidence provides
-deterministic content linkage only; it does not authenticate the producer,
-provide freshness or replay protection, prove honest execution, or grant final
-authority.
+v1.0.0 remains the locked package release. V4.9-D2 and V4.9-D3A are unreleased,
+V1-shape-preserving compatibility extensions. D3A freezes the existing D2/V2
+hash bytes without changing them. Gateway evidence provides deterministic content linkage only;
+it does not authenticate the producer, provide freshness or replay protection,
+prove honest execution, claim Rust compatibility, or grant final authority.
 
 ---
 
