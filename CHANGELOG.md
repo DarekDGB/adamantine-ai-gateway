@@ -17,6 +17,15 @@ The format follows a simple release log with explicit scope and locked boundary 
 - `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2` producer-side export contract and locked fixture
 - V2 direct and from-result Adamantine evidence exporters
 - negative tests for mutation, splice, downgrade, subclass, profile, backend, malformed-data, and resource-limit cases
+- `AI_GATEWAY_CANONICAL_JSON_V1` as the named byte-exact profile for current
+  Gateway structured hashes
+- literal canonical-byte and SHA-256 golden, equivalence, and injectivity
+  vectors; literal rejected raw-wire bytes; and exact boundary constructions
+  with frozen accepted lengths and hashes
+- a standalone standard-library checker with an independent encoder and strict
+  duplicate-key parser
+- pinned-seed differential fuzzing that compares production and independent
+  bytes before hashes
 
 ### Changed
 - the V1 from-result Adamantine exporter now rejects any result containing `policy_binding` with `POLICY_BOUND_RESULT_REQUIRES_EVIDENCE_V2`
@@ -27,6 +36,11 @@ The format follows a simple release log with explicit scope and locked boundary 
 - the contract and integration namespaces expose the new explicitly versioned D2 surfaces
 - documentation distinguishes deterministic content linkage from authentication, provenance, freshness, replay protection, honest-execution proof, and authority
 - the release-truth lock rejects invalid UTF-8, C1 controls, and known mojibake markers across repository text files
+- canonical serialization wording now specifies a closed algorithm, lowercase
+  control escapes, Unicode scalar ordering and length units, no normalization,
+  float rejection, and duplicate decoded-key rejection
+- the existing serializer expression and every existing artifact field and hash
+  remain unchanged
 
 ### Compatibility
 - frozen V1 envelope, output, receipt, handoff, and PolicyPack artifact shapes remain unchanged
@@ -34,7 +48,9 @@ The format follows a simple release log with explicit scope and locked boundary 
 - V1 from-result exporter input is intentionally tightened from general
   `Mapping` values to one exact bounded built-in dictionary snapshot
 - package version remains `1.0.0`; this entry does not create a tag or release
-- AdamantineOS independent expected-policy verification remains V4.9-D3 work
+- V4.9-D3A proves independent Python parity only and makes no Rust or SDK
+  compatibility claim
+- AdamantineOS independent expected-policy verification remains V4.9-D3B work
 
 ---
 
