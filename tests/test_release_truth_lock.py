@@ -3,6 +3,8 @@ from pathlib import Path
 import tomllib
 
 from ai_gateway import __all__ as root_public_api
+from ai_gateway.adapters.poi import PoIAdapter
+from ai_gateway.adapters.wallet import WalletAdapter
 from ai_gateway.version import __version__
 
 
@@ -43,6 +45,7 @@ EXPECTED_CONTRACT_DOCS = {
     "ADAPTER_MANIFEST_V1.md",
     "AI_GATEWAY_ENVELOPE_V1.md",
     "AI_GATEWAY_HANDOFF_V1.md",
+    "AI_GATEWAY_CANONICAL_JSON_V1.md",
     "AI_GATEWAY_OUTPUT_V1.md",
     "AI_GATEWAY_RECEIPT_V1.md",
     "AI_GATEWAY_POLICY_BINDING_V1.md",
@@ -76,8 +79,12 @@ EXPECTED_README_PHRASES = [
     "Deterministic fallback artifacts locked",
     "process_governed",
     "## Unreleased V4.9-D2 Compatibility Extension",
+    "## Unreleased V4.9-D3A Canonical-Profile Gate",
     "process_governed_with_policy_binding_v1",
     "ADAMANTINE_AI_GATEWAY_EVIDENCE_V2",
+    "ai_gateway_canonical_json_v1",
+    "D2/V2 policy-bound hash bytes",
+    "no Rust or SDK compatibility claim",
     "deterministic content linkage only",
     "MIT License (c) DarekDGB",
 ]
@@ -87,6 +94,9 @@ EXPECTED_CHANGELOG_UNRELEASED_PHRASES = [
     "AI_GATEWAY_POLICY_BINDING_V1",
     "process_governed_with_policy_binding_v1",
     "ADAMANTINE_AI_GATEWAY_EVIDENCE_V2",
+    "AI_GATEWAY_CANONICAL_JSON_V1",
+    "differential fuzzing",
+    "no Rust or SDK",
     "POLICY_BOUND_RESULT_REQUIRES_EVIDENCE_V2",
     "package version remains `1.0.0`",
 ]
@@ -143,8 +153,19 @@ def test_readme_and_changelog_match_current_release_version() -> None:
 
     assert "## v1.0.0 Highlights" in readme
     assert "## Unreleased V4.9-D2 Compatibility Extension" in readme
+    assert "## Unreleased V4.9-D3A Canonical-Profile Gate" in readme
     assert "## [Unreleased]" in changelog
     assert "## [v1.0.0] - 2026-04-07" in changelog
+
+
+def test_receipt_examples_separate_gateway_and_adapter_version_truth() -> None:
+    receipt_contract = _read(CONTRACTS_DIR / "AI_GATEWAY_RECEIPT_V1.md")
+
+    assert receipt_contract.count('"gateway_version": "1.0.0"') == 2
+    assert receipt_contract.count('"adapter_version": "0.3.0"') == 2
+    assert '"adapter_version": "1.0.0"' not in receipt_contract
+    assert PoIAdapter().manifest["adapter_version"] == "0.3.0"
+    assert WalletAdapter().manifest["adapter_version"] == "0.3.0"
 
 
 def test_readme_contains_current_release_truth_phrases() -> None:
@@ -204,6 +225,8 @@ def test_readme_current_release_claims_are_backed_by_runtime_surface() -> None:
     assert hasattr(import_module("ai_gateway.handoff"), "build_handoff_v1")
     assert hasattr(import_module("ai_gateway.receipt"), "build_receipt_v1")
     integration = import_module("ai_gateway.integration")
+    canonical = import_module("ai_gateway.canonical")
+    assert canonical.AI_GATEWAY_CANONICAL_JSON_V1 == "ai_gateway_canonical_json_v1"
     assert hasattr(integration, "build_adamantine_ai_gateway_evidence_v2")
     assert hasattr(
         integration,
@@ -215,7 +238,16 @@ def test_changelog_v1_0_0_claims_are_backed_by_files_present_in_repo() -> None:
     assert (CONTRACTS_DIR / "POLICYPACK_V1.md").exists()
     assert (CONTRACTS_DIR / "AI_GATEWAY_HANDOFF_V1.md").exists()
     assert (CONTRACTS_DIR / "AI_GATEWAY_POLICY_BINDING_V1.md").exists()
+    assert (CONTRACTS_DIR / "AI_GATEWAY_CANONICAL_JSON_V1.md").exists()
     assert (CONTRACTS_DIR / "ADAMANTINE_AI_GATEWAY_EVIDENCE_V2.md").exists()
+    assert (REPO_ROOT / "tools" / "check_ai_gateway_canonical_json_v1.py").exists()
+    assert (
+        REPO_ROOT
+        / "tests"
+        / "fixtures"
+        / "canonical"
+        / "ai_gateway_canonical_json_v1_vectors.json"
+    ).exists()
     assert (REPO_ROOT / "ai_gateway" / "policy.py").exists()
     assert (REPO_ROOT / "ai_gateway" / "handoff.py").exists()
 
@@ -226,6 +258,8 @@ def test_release_truth_lock_is_strict_about_current_v1_state() -> None:
 
     assert "package version `1.0.0`" in readme
     assert "deterministic policy-enforcement and evidence-production boundary" in readme
+    assert "ai_gateway_canonical_json_v1" in readme
+    assert "no Rust or SDK compatibility claim" in readme
     assert "tests-223%20passed" not in readme
     assert "actions/workflows/ci.yml/badge.svg" in readme
     assert "This release establishes Adamantine AI Gateway as a locked deterministic enforcement boundary" in changelog
