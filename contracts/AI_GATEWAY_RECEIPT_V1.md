@@ -1,5 +1,7 @@
 # AI Gateway Receipt V1
 
+Author attribution: **DarekDGB**
+
 ## Contract ID
 `ai_gateway_receipt_v1`
 
@@ -26,7 +28,7 @@ AdamantineOS remains the final ALLOW / DENY authority.
 ---
 
 ## Status
-Active for `v0.3.0`
+Active frozen V1 contract at package version `1.0.0`.
 
 ---
 
@@ -77,10 +79,12 @@ Must match the registered adapter identity.
 Must come from the adapter manifest.
 
 ### envelope_hash
-SHA-256 hash of canonical serialized envelope.
+SHA-256 hash of the envelope encoded by
+`ai_gateway_canonical_json_v1`.
 
 ### output_hash
-SHA-256 hash of canonical serialized output.
+SHA-256 hash of the output encoded by
+`ai_gateway_canonical_json_v1`.
 
 ### policy_decision
 High-level outcome classification:
@@ -92,12 +96,16 @@ Exact reason returned by gateway processing.
 Must NOT be modified or remapped.
 
 ### created_from_contract
-For v0.3.0:
+Required value:
 `ai_gateway_output_v1`
 
 ### determinism_profile
-Suggested value:
+Required value:
 `canonical_sha256_no_time_v1`
+
+This receipt profile fixes SHA-256 over `ai_gateway_canonical_json_v1` bytes and
+prohibits time-dependent fields. The canonical profile name is contract-fixed;
+it is not an additional receipt field.
 
 ---
 
@@ -125,10 +133,14 @@ For identical input and identical adapter state:
 -> identical receipt  
 
 The receipt must be generated using:
-- canonical JSON serialization
+- `ai_gateway_canonical_json_v1` serialization
 - SHA-256 hashing
 - fixed field set
 - no external inputs
+
+The byte algorithm, strict raw-wire duplicate-key rule, literal vectors, and
+D2/V2 governed resource boundaries are defined by
+`AI_GATEWAY_CANONICAL_JSON_V1.md`.
 
 ---
 
@@ -137,7 +149,7 @@ The receipt must be generated using:
 ```json
 {
   "receipt_version": "ai_gateway_receipt_v1",
-  "gateway_version": "0.3.0",
+  "gateway_version": "1.0.0",
   "adapter_id": "poi",
   "adapter_version": "0.3.0",
   "envelope_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -156,7 +168,7 @@ The receipt must be generated using:
 ```json
 {
   "receipt_version": "ai_gateway_receipt_v1",
-  "gateway_version": "0.3.0",
+  "gateway_version": "1.0.0",
   "adapter_id": "wallet",
   "adapter_version": "0.3.0",
   "envelope_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
@@ -185,7 +197,7 @@ If receipt generation fails:
 This contract does NOT define:
 - final execution decisions
 - identity verification (Q-ID)
-- Shield v3 evidence structure
+- Shield evidence structure or signature verification
 - Adaptive Core governance
 - AdamantineOS execution boundary
 
@@ -203,3 +215,7 @@ AI Gateway Receipt V1 provides:
 It transforms the gateway into:
 
 **a deterministic evidence-emitting boundary, not just a processing layer**
+
+---
+
+**MIT - DarekDGB**
