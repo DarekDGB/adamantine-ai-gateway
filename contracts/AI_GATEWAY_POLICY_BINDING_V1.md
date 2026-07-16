@@ -3,7 +3,8 @@
 Author attribution: **DarekDGB**  
 Contract identifier: `ai_gateway_policy_binding_v1`  
 Policy-pack contract identifier: `policy_pack_v1`  
-Status: V4.9-D2 producer contract
+Canonical profile: `ai_gateway_canonical_json_v1`  
+Status: V4.9-D2 producer contract with V4.9-D3A byte-profile lock
 
 ## Purpose
 
@@ -27,7 +28,8 @@ The artifact is an exact JSON object with these seven fields and no others:
 | `handoff_hash` | Lowercase 64-character canonical SHA-256 hex |
 
 No algorithm or profile field is caller selectable. This contract fixes
-canonical JSON plus SHA-256. The linked receipt must use
+`ai_gateway_canonical_json_v1` plus SHA-256. The profile identifier is
+contract-fixed and is not a new artifact field. The linked receipt must use
 `canonical_sha256_no_time_v1`; any other determinism profile is rejected.
 
 ## Policy snapshot and identity rules
@@ -45,8 +47,15 @@ The producer must:
 6. use the captured identity and digest when constructing the binding.
 
 The policy hash covers every validated PolicyPack V1 field, including `notes`.
-Object-key order is normalized by canonical JSON. Array order remains
-identity-bearing. No Unicode normalization is applied.
+Object keys are sorted by Unicode scalar-value sequence under
+`ai_gateway_canonical_json_v1`. Array order remains identity-bearing. No
+Unicode normalization is applied.
+
+The complete byte algorithm, escaping rules, raw-wire duplicate-key rule,
+literal vectors, injectivity pairs, and boundary vectors are defined by
+`AI_GATEWAY_CANONICAL_JSON_V1.md`. A raw JSON parser must reject duplicate
+decoded keys before constructing a mapping. An already decoded mapping cannot
+prove that its wire representation was duplicate-free.
 
 ## Artifact-chain checks
 
@@ -56,14 +65,18 @@ receipt, and handoff into bounded exact built-in JSON values and checks:
 - envelope adapter and task match the output;
 - receipt and handoff adapter identity match the output;
 - handoff task matches the output;
-- receipt and handoff envelope hashes equal canonical SHA-256 of the envelope;
-- receipt and handoff output hashes equal canonical SHA-256 of the output;
+- receipt and handoff envelope hashes equal SHA-256 of the envelope encoded by
+  `ai_gateway_canonical_json_v1`;
+- receipt and handoff output hashes equal SHA-256 of the output encoded by
+  `ai_gateway_canonical_json_v1`;
 - receipt and handoff decisions and reason IDs match the output;
 - accepted output uses `ACCEPTED` and rejected output uses a registered,
   non-`ACCEPTED` reason ID;
-- output and handoff context hashes equal canonical SHA-256 of the envelope;
+- output and handoff context hashes equal SHA-256 of the envelope encoded by
+  `ai_gateway_canonical_json_v1`;
 - receipt determinism profile is exactly `canonical_sha256_no_time_v1`; and
-- `receipt_hash` and `handoff_hash` bind the canonical validated artifacts.
+- `receipt_hash` and `handoff_hash` bind the validated artifacts encoded by
+  `ai_gateway_canonical_json_v1`.
 
 Only the V4.9-D2 path
 `AIGateway.process_governed_with_policy_binding_v1(...)` returns this artifact.
@@ -103,13 +116,16 @@ The D2 exact-snapshot boundary enforces:
 - maximum depth: 10;
 - maximum keys per object: 1,000;
 - maximum items per array: 1,000;
-- maximum string length: 10,000 characters;
+- maximum string and object-key length: 10,000 Unicode scalar values;
 - maximum exact JSON integer width: 4,096 bits;
 - maximum snapshot nodes: 20,000;
 - maximum canonical snapshot size and cumulative string, key, and integer-text
   preflight budget:
   1,048,576 bytes; and
 - maximum canonical binding artifact size: 4,096 bytes.
+
+The scalar-value limit is separate from the UTF-8 byte limits. It is not a
+UTF-8 byte, UTF-16 code-unit, grapheme, or display-width count.
 
 ## Security and authority limits
 
@@ -126,7 +142,11 @@ This artifact provides deterministic content linkage only. It is not:
 The artifact does not contain the source policy snapshot. A consumer cannot
 independently recompute `policy_pack_hash` without receiving that snapshot from
 a separately controlled source. AdamantineOS expected-policy comparison and
-independent acceptance are V4.9-D3 work.
+independent acceptance are V4.9-D3B work.
+
+V4.9-D3A proves the current Python producer against an independent Python
+encoder. It does not claim Rust or SDK conformance. A Rust claim requires the
+shared literal vectors and Python-to-Rust byte differential fuzzing.
 
 ---
 
