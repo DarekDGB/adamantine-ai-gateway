@@ -1,7 +1,8 @@
 # AI Gateway AdamantineOS Integration
 
 Author attribution: **DarekDGB**  
-Status: V1 and V2 AdamantineOS-facing producer exporters  
+Status: V1 and V2 AdamantineOS-facing producer exporters with a separately
+verified V4.9-D3B V2 consumer  
 AI Gateway package boundary: `v1.0.0` remains unchanged  
 AdamantineOS authority: final fail-closed policy and execution decision remains
 inside AdamantineOS
@@ -39,8 +40,8 @@ The V1 from-result exporter now requires an exact bounded built-in result
 snapshot. If the result contains `policy_binding`, even with a null value, it
 rejects with `POLICY_BOUND_RESULT_REQUIRES_EVIDENCE_V2`. This prevents the
 helper itself from discarding a present binding. It cannot detect prior key
-removal or direct V1-builder use; a D3 exact-policy consumer must require V2 and
-prohibit fallback to V1.
+removal or direct V1-builder use; the verified D3B exact-policy consumer
+requires V2 and prohibits fallback to V1.
 
 ## V2 policy-bound evidence exporter
 
@@ -76,15 +77,17 @@ or policy hash from its own fields alone.
 ```text
 AI Gateway V1 or V2 evidence
         v
-V4.9-D3 AdamantineOS independent evidence normalizer and expected-policy boundary (pending)
+V4.9-D3B AdamantineOS independent raw-wire and expected-policy boundary (verified separately)
         v
 AdamantineOS final policy and execution boundary
 ```
 
 V4.9-D2 implements only the Gateway producer and exporter. It does not modify
-AdamantineOS. The V4.9-D3 consumer must receive expected policy ID, version, and
-digest from verifier-controlled trusted local configuration and must fail
-closed on unknown, missing, malformed, spliced, or mismatched bindings.
+AdamantineOS. The separate V4.9-D3B consumer receives expected context, policy
+ID, policy version, and complete policy hash from verifier-controlled trusted
+local configuration. It fails closed on unknown, missing, malformed, spliced,
+or mismatched bindings, rejects duplicate raw JSON keys, has no V1 fallback,
+and never returns final approval.
 
 ## Locked authority behavior
 
