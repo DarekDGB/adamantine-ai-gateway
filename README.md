@@ -73,8 +73,8 @@ V1 artifacts, the root package exports, or package version `1.0.0`:
   receipt, handoff, or policy binding.
 
 This is not a release tag or version bump. The independent AdamantineOS
-expected-policy consumer remains V4.9-D3B work. Shield compatibility is not
-claimed by this D2 producer step.
+expected-policy consumer is implemented and separately verified by V4.9-D3B.
+Shield compatibility is not claimed by this D2 producer step alone.
 
 ---
 
@@ -94,8 +94,33 @@ hashes as `ai_gateway_canonical_json_v1`:
   unchanged.
 
 This gate proves independent Python parity only. It makes no Rust or SDK compatibility claim.
-AdamantineOS policy-bound consumption remains V4.9-D3B work and must not begin
-until D3A is verified from a fresh post-commit ZIP.
+The separately implemented V4.9-D3B AdamantineOS consumer independently uses
+the same frozen bytes and verifier-controlled expected-policy values.
+
+---
+
+## Unreleased V4.9-E Shield v4 Compatibility Boundary
+
+V4.9-E freezes AI Gateway as a Gateway-local evidence source, not a Shield
+cryptographic verifier:
+
+- Gateway does not verify Shield signatures and has no Shield trust registry,
+  Shield key role, or OQS dependency.
+- Gateway-local `accepted` and `policy_decision` values are evidence only. They
+  are not AdamantineOS approval or execution authority.
+- frozen output, receipt, handoff, and evidence objects keep exact closed
+  top-level shapes; unknown Shield-like or authority-like fields cannot extend
+  those contracts.
+- adapter `output_payload` data is not interpreted as Shield evidence or
+  authority and is not exported by the V2 evidence bundle.
+- Shield v4 keeps `classical-ed25519 + ml-dsa` required and draft
+  FN-DSA/Falcon-1024 evidence optional; Gateway neither verifies nor changes
+  that policy.
+- AdamantineOS remains the independent final fail-closed policy and execution
+  boundary, and every Gateway evidence path remains non-authoritative.
+
+See `docs/reports/v4/SHIELD_V4_COMPATIBILITY.md` for the normative compatibility
+boundary and its regression evidence.
 
 ---
 
@@ -220,7 +245,7 @@ See `contracts/` for the formal repo contract documents.
 - Explicit reason IDs
 - No hidden authority
 - No silent fallbacks
-- Adapters translate, gateway verifies and enforces
+- Adapters translate; Gateway validates its own contracts and enforces its own policy
 - Evidence does not grant approval, signing, broadcast, or execution authority
 - AdamantineOS remains the independent final policy and execution boundary
 
@@ -228,9 +253,11 @@ See `contracts/` for the formal repo contract documents.
 
 ## Release Status
 
-v1.0.0 remains the locked package release. V4.9-D2 and V4.9-D3A are unreleased,
-V1-shape-preserving compatibility extensions. D3A freezes the existing D2/V2
-hash bytes without changing them. Gateway evidence provides deterministic content linkage only;
+v1.0.0 remains the locked package release. V4.9-D2, V4.9-D3A, and V4.9-E are
+unreleased, V1-shape-preserving compatibility extensions. D3A freezes the
+existing D2/V2 hash bytes without changing them. The separate V4.9-D3B
+AdamantineOS consumer is verified, but Gateway evidence still provides
+deterministic content linkage only;
 it does not authenticate the producer, provide freshness or replay protection,
 prove honest execution, claim Rust compatibility, or grant final authority.
 
