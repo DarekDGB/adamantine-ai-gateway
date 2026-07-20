@@ -4,7 +4,8 @@ Author attribution: **DarekDGB**
 Contract identifier: `ai_gateway_policy_binding_v1`  
 Policy-pack contract identifier: `policy_pack_v1`  
 Canonical profile: `ai_gateway_canonical_json_v1`  
-Status: V4.9-D2 producer contract with V4.9-D3A byte-profile lock
+Status: V4.9-D2 producer contract with V4.9-D3A byte-profile lock and a
+separately verified V4.9-D3B AdamantineOS consumer
 
 ## Purpose
 
@@ -141,8 +142,11 @@ This artifact provides deterministic content linkage only. It is not:
 
 The artifact does not contain the source policy snapshot. A consumer cannot
 independently recompute `policy_pack_hash` without receiving that snapshot from
-a separately controlled source. AdamantineOS expected-policy comparison and
-independent acceptance are V4.9-D3B work.
+a separately controlled source. The V4.9-D3B AdamantineOS consumer compares the
+declared ID, version, and complete policy hash only with verifier-controlled
+trusted local expectations. Successful comparison remains evidence-only with
+`final_approval == false`; it does not authenticate the Gateway or prove the
+declared policy snapshot was possessed or enforced.
 
 V4.9-D3A proves the current Python producer against an independent Python
 encoder. It does not claim Rust or SDK conformance. A Rust claim requires the
