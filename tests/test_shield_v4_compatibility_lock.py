@@ -352,12 +352,13 @@ def test_all_ten_authority_names_remain_recursively_forbidden() -> None:
 
 
 def test_v49e_document_attribution_is_darekdgb_only() -> None:
+    assert _read(Path(__file__).resolve()).isascii()
     allowed_attribution_lines = frozenset(
         {
             "Author attribution: DarekDGB",
             "Owner attribution: DarekDGB",
             "MIT - DarekDGB",
-            "MIT â DarekDGB",
+            "MIT \u2014 DarekDGB",
             "MIT License (c) DarekDGB",
         }
     )
@@ -378,7 +379,7 @@ def test_v49e_document_attribution_is_darekdgb_only() -> None:
                 ("author:", "author attribution:", "owner attribution:", "copyright")
             ):
                 assert normalized in allowed_attribution_lines, path.relative_to(ROOT)
-            if lowered.startswith(("mit -", "mit â", "mit license (c)")):
+            if lowered.startswith(("mit -", "mit \u2014", "mit license (c)")):
                 assert normalized in allowed_attribution_lines, path.relative_to(ROOT)
 
     assert "Author attribution: **DarekDGB**" in _read(COMPATIBILITY_DOC)
