@@ -4,7 +4,8 @@ Author attribution: **DarekDGB**
 Evidence identifier: `adamantine_ai_gateway_evidence_v2`  
 Source identifier: `adamantine-ai-gateway`  
 Evidence role: `evidence_only`  
-Status: V4.9-D2 producer-side export contract
+Status: V4.9-D2 producer-side export contract with a separately verified
+V4.9-D3B AdamantineOS consumer
 
 ## Purpose
 
@@ -22,7 +23,7 @@ The V2 bundle contains exactly these seven fields:
 | `evidence_version` | Exact string `adamantine_ai_gateway_evidence_v2` |
 | `source` | Exact string `adamantine-ai-gateway` |
 | `evidence_role` | Exact string `evidence_only` |
-| `expected_context_hash` | Caller-supplied expected lowercase 64-character SHA-256 hex; independent verifier control is a D3 responsibility |
+| `expected_context_hash` | Caller-supplied expected lowercase 64-character SHA-256 hex; the D3B consumer compares it with verifier-controlled local context |
 | `handoff` | Valid `AI_GATEWAY_HANDOFF_V1` artifact |
 | `receipt` | Valid `AI_GATEWAY_RECEIPT_V1` artifact |
 | `policy_binding` | Valid `AI_GATEWAY_POLICY_BINDING_V1` artifact |
@@ -88,15 +89,22 @@ POLICY_BOUND_RESULT_REQUIRES_EVIDENCE_V2
 
 The rejection applies even if the binding value is `null`. This helper prevents
 in-call removal of a present binding. It cannot detect a caller that deleted the
-key before the call or used the direct V1 builder. The D3 consumer must require
-V2 and prohibit fallback to V1 wherever exact policy identity is required.
+key before the call or used the direct V1 builder. The verified D3B consumer
+requires V2 and prohibits fallback to V1 wherever exact policy identity is
+required.
 
 ## Consumer boundary and limitations
 
-V4.9-D2 implements producer-side validation and packaging only. V4.9-D3 must
-implement the independent AdamantineOS consumer, including verifier-controlled
-expected policy ID, version, and digest checks. Until D3 is implemented and
-verified, this bundle is not an AdamantineOS policy-acceptance proof.
+V4.9-D2 implements producer-side validation and packaging. The separate
+V4.9-D3B AdamantineOS consumer independently reproduces the frozen canonical
+bytes and checks expected context, policy ID, policy version, and complete
+policy hash against verifier-controlled trusted local configuration. It rejects
+missing binding with no V1 fallback and keeps earlier denials dominant.
+
+Successful D3B verification proves deterministic declared-content linkage and
+agreement with those local expectations. It is not Gateway authentication or
+an AdamantineOS policy-acceptance or execution-authority proof; every consumer
+result keeps `final_approval == false`.
 
 The bundle provides deterministic content linkage. It does not provide:
 
