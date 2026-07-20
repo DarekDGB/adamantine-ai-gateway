@@ -5,6 +5,7 @@ Decision step: `Shield V4.9-D1`
 Decision status: locked  
 Decision: new versioned policy binding required  
 Producer implementation status: `Shield V4.9-D2` implemented in this source  
+Independent consumer status: `Shield V4.9-D3B` verified separately in AdamantineOS  
 Frozen V1 schema change: none
 
 ---
@@ -183,10 +184,11 @@ For the policy-bound producer path:
 V4.9-D2 also introduces `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2` and its direct and
 from-result exporters. The V1 from-result helper rejects a present
 `policy_binding` key instead of dropping it. It cannot detect a binding removed
-before the call or use of the direct V1 builder; the D3 consumer must require V2
-where policy identity is required and must not fall back to V1. Independent
-AdamantineOS expected-policy comparison and acceptance remain V4.9-D3 work and
-are not claimed complete by the producer bundle.
+before the call or use of the direct V1 builder; the verified D3B consumer
+requires V2 where policy identity is required and does not fall back to V1.
+Independent AdamantineOS expected-context and expected-policy comparison is
+implemented separately and remains evidence-only. Its `final_approval` result
+is always false. It is not a claim made complete by the producer bundle alone.
 
 ---
 
@@ -197,12 +199,14 @@ reviewable:
 
 ```text
 V4.9-D1  complete: decision, V1 truth correction, and regression lock
-V4.9-D2  implemented here: Gateway versioned policy-binding producer
-V4.9-D3  pending: AdamantineOS independent policy-binding consumer
-V4.9-E   blocked on verified D3: Gateway Shield v4 compatibility contract
+V4.9-D2  complete: Gateway versioned policy-binding producer
+V4.9-D3A complete: Gateway canonical-profile and portable-vector lock
+V4.9-D3B complete: independently verified AdamantineOS policy-binding consumer
+V4.9-E   implemented here: Gateway Shield v4 compatibility boundary and lock
 ```
 
-V4.9-E must not begin until V4.9-D3 is verified from fresh post-commit ZIPs.
+V4.9-E began only after V4.9-D3B was green in CI and verified from a fresh
+post-commit AdamantineOS ZIP.
 
 ---
 
