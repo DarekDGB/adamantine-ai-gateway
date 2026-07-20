@@ -1,5 +1,7 @@
 # AI_GATEWAY_HANDOFF_V1
 
+Author attribution: **DarekDGB**
+
 ## Purpose
 
 `AI_GATEWAY_HANDOFF_V1` defines the deterministic downstream handoff object emitted from Adamantine AI Gateway governed processing.
@@ -10,14 +12,12 @@ It is the sealed transition point between:
 - adapter-produced output
 - receipt-linked gateway evidence
 
-This contract is intended for downstream consumers such as:
-- Q-ID
-- Shield v3
-- Adaptive Core
-- AdamantineOS
+This contract is intended for independent downstream consumers, including
+AdamantineOS integration code.
 
-It does not make the final system decision.
-It carries the gateway decision boundary forward in a strict, verifiable form.
+It does not make the final system decision. It carries a Gateway-local decision
+record forward in a strict deterministic form. It is not a Shield receipt,
+signature bundle, cryptographic verification result, or trust-registry record.
 
 ---
 
@@ -67,6 +67,9 @@ Allowed values:
 - `rejected`
 
 This value must be derived from the validated gateway output and must match the validated receipt.
+
+It records only the Gateway-local outcome. `accepted` does not mean Shield
+verification passed and does not mean AdamantineOS granted final approval.
 
 ### `reason_id`
 String. Explicit reason identifier copied from validated gateway output.
@@ -120,6 +123,8 @@ Validation must reject:
 - invalid `policy_decision`
 - invalid hash shape
 - non-canonical values
+- any unknown Shield-like, signature-like, key-role, or authority-like top-level
+  field
 
 Builder logic must reject:
 - envelope hash mismatch vs receipt
@@ -135,6 +140,14 @@ All failures must be treated as fail-closed.
 `AI_GATEWAY_HANDOFF_V1` does not:
 - replace the gateway receipt
 - replace adapter manifests
+- verify Shield signatures
+- contain or select a Shield algorithm, signature profile, key role, key ID, or
+  trust registry
+- provide producer authentication, freshness, replay protection, or remote
+  attestation
 - grant execution authority
 - make final AdamantineOS decisions
 - introduce time, randomness, or network dependency
+
+AdamantineOS remains the independent final fail-closed policy and execution
+boundary.
