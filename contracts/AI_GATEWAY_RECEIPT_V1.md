@@ -12,8 +12,8 @@ Author attribution: **DarekDGB**
 AI Gateway Receipt V1 defines the deterministic evidence artifact emitted by the Adamantine AI Gateway after processing.
 
 This receipt exists to:
-- provide verifiable evidence of gateway processing
-- allow downstream systems to validate behavior deterministically
+- provide deterministic evidence of Gateway processing
+- allow downstream systems to check the declared artifact linkage
 - preserve the exact outcome without relying on internal adapter logic
 
 The receipt is **evidence only**.
@@ -24,6 +24,10 @@ It does NOT:
 - replace AdamantineOS decision layer
 
 AdamantineOS remains the final ALLOW / DENY authority.
+
+The receipt is not a Shield receipt and is not cryptographically authenticated.
+It contains no Shield signature, algorithm, standard profile, key role, key ID,
+trust registry, or final-approval field.
 
 ---
 
@@ -91,6 +95,9 @@ High-level outcome classification:
 - `accepted`
 - `rejected`
 
+This is the Gateway-local outcome only. `accepted` is not Shield verification
+and is not AdamantineOS final approval.
+
 ### reason_id
 Exact reason returned by gateway processing.
 Must NOT be modified or remapped.
@@ -105,7 +112,8 @@ Required value:
 
 This receipt profile fixes SHA-256 over `ai_gateway_canonical_json_v1` bytes and
 prohibits time-dependent fields. The canonical profile name is contract-fixed;
-it is not an additional receipt field.
+it is not an additional receipt field. It is Gateway-local hashing metadata,
+not a Shield signature `standard_profile`.
 
 ---
 
@@ -121,6 +129,9 @@ it is not an additional receipt field.
 8. output_hash must be 64-character lowercase hex
 9. created_from_contract must be supported
 10. Unknown fields must be rejected
+
+Shield-like, signature-like, key-role, and authority-like top-level fields are
+unknown fields and must be rejected.
 
 ---
 
@@ -197,9 +208,12 @@ If receipt generation fails:
 This contract does NOT define:
 - final execution decisions
 - identity verification (Q-ID)
-- Shield evidence structure or signature verification
+- Shield evidence structure, signature verification, trust registries, key
+  roles, algorithms, or signature profiles
 - Adaptive Core governance
 - AdamantineOS execution boundary
+- producer authentication, freshness, replay protection, source provenance, or
+  remote attestation
 
 ---
 
@@ -208,7 +222,7 @@ This contract does NOT define:
 AI Gateway Receipt V1 provides:
 
 - deterministic evidence output
-- verifiable processing trace
+- deterministic declared processing trace
 - strict, bounded structure
 - compatibility with downstream systems
 
