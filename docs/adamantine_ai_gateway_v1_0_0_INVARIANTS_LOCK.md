@@ -2,7 +2,8 @@
 
 **Status:** LOCKED V1.0.0 BOUNDARY RECORD  
 **Release boundary:** `v1.0.0`  
-**Current repo state reviewed:** `v1.0.0` fresh V4.9-D2 producer source  
+**Current repo state reviewed:** `v1.0.0` plus the fresh V4.9-D3A producer and
+V4.9-E compatibility source  
 **Owner attribution:** DarekDGB
 
 ---
@@ -201,13 +202,14 @@ V4.9-D2 implements the selected producer path:
 - the frozen `process_governed(...)` result remains unbound and unchanged;
 - the V1 from-result helper rejects a present `policy_binding` key and directs
   callers to `ADAMANTINE_AI_GATEWAY_EVIDENCE_V2`; it cannot detect prior key
-  removal or direct V1-builder use, so D3 must require V2 and prohibit fallback
-  wherever exact policy identity is required.
+  removal or direct V1-builder use, so the verified D3B consumer requires V2
+  and prohibits fallback wherever exact policy identity is required.
 
 This is producer-side deterministic content linkage, not authentication,
 source provenance, freshness, replay protection, remote attestation, proof of
-honest execution, or authority. The independent AdamantineOS expected-policy
-consumer remains V4.9-D3 work.
+honest execution, or authority. The independent V4.9-D3B AdamantineOS consumer
+is separately verified, uses verifier-controlled expectations, and keeps every
+result evidence-only with `final_approval == false`.
 
 ---
 
@@ -436,10 +438,12 @@ Downstream consumers must know exactly what is stable and what they can trust.
 - docs example that matches real tested flow
 - integration example or example fixture bundle checked into repo
 - the V1 from-result helper refuses a present policy-binding key; because it
-  cannot detect prior removal or direct V1-builder use, the D3 consumer must
-  require V2 and prohibit fallback when exact policy identity is required
-- AdamantineOS verifier-controlled expected-policy comparison remains a
-  separate consumer responsibility and is not claimed complete by D2
+  cannot detect prior removal or direct V1-builder use, the verified D3B
+  consumer requires V2 and prohibits fallback when exact policy identity is
+  required
+- AdamantineOS verifier-controlled expected-context and expected-policy
+  comparison is a separately verified consumer responsibility and is not a
+  property of the D2 producer alone
 
 ---
 
