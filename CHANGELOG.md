@@ -26,6 +26,8 @@ The format follows a simple release log with explicit scope and locked boundary 
   duplicate-key parser
 - pinned-seed differential fuzzing that compares production and independent
   bytes before hashes
+- a Shield v4 compatibility boundary document and regression lock proving that
+  Gateway remains a non-Shield-verifier evidence source
 
 ### Changed
 - the V1 from-result Adamantine exporter now rejects any result containing `policy_binding` with `POLICY_BOUND_RESULT_REQUIRES_EVIDENCE_V2`
@@ -41,6 +43,8 @@ The format follows a simple release log with explicit scope and locked boundary 
   float rejection, and duplicate decoded-key rejection
 - the existing serializer expression and every existing artifact field and hash
   remain unchanged
+- current-facing contracts now distinguish Gateway-local acceptance and
+  deterministic linkage from Shield verification and AdamantineOS authority
 
 ### Compatibility
 - frozen V1 envelope, output, receipt, handoff, and PolicyPack artifact shapes remain unchanged
@@ -50,7 +54,10 @@ The format follows a simple release log with explicit scope and locked boundary 
 - package version remains `1.0.0`; this entry does not create a tag or release
 - V4.9-D3A proves independent Python parity only and makes no Rust or SDK
   compatibility claim
-- AdamantineOS independent expected-policy verification remains V4.9-D3B work
+- V4.9-D3B independently verifies expected context, policy ID, policy version,
+  and policy hash in AdamantineOS without granting Gateway authority
+- V4.9-E adds no Shield import, trust registry, key role, OQS dependency,
+  runtime behavior, artifact field, package-version change, or final authority
 
 ---
 
