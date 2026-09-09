@@ -8,6 +8,22 @@ The format follows a simple release log with explicit scope and locked boundary 
 
 ## [Unreleased]
 
+### V4.10-G3 release truth
+- Distinguish the existing `v1.0.0` tag from the later unreleased working tree.
+- Retain package/runtime `1.0.0` for this documentation/test-only step; no
+  release publication, tag creation, or tag movement is authorized.
+- Keep the next independent distribution release number unassigned pending
+  explicit release review; do not inherit Shield's `4.0.0` version.
+- Record 419 passing G3 tests, zero skips, and 100% statement and branch
+  coverage separately from the historical pre-G3 baseline of 413 tests.
+- Add a release-status record and six release-truth regression tests.
+- Preserve all runtime, contract, canonical-profile, fixture, workflow,
+  dependency, package-metadata, and existing-test bytes.
+- Preserve frozen V1 shapes without hiding the already implemented V1
+  from-result input hardening or conflating V1 with policy-bound evidence V2.
+- Require exact-commit CI and a fresh post-commit ZIP before G3 completion;
+  local candidate tests do not establish future CI success.
+
 ### Added
 - `AI_GATEWAY_POLICY_BINDING_V1` as a separate seven-field versioned artifact
 - `process_governed_with_policy_binding_v1(...)` as the policy-bound producer path
