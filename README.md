@@ -15,6 +15,11 @@ Adamantine AI Gateway is a deterministic policy-enforcement and evidence-product
 
 It sits between variable external AI systems and the stricter Adamantine stack.
 
+The existing `v1.0.0` tag and the current working tree are different snapshots.
+Package/runtime metadata remains `1.0.0`; the V4.9 compatibility extensions
+below and V4.10-G3 release-truth work remain unreleased. This source must not
+be published as a replacement for the existing tag.
+
 ---
 
 ## System Diagram
@@ -125,6 +130,9 @@ boundary and its regression evidence.
 ---
 
 ## What v1.0.0 Means
+
+This section describes the historical release boundary, not a claim that later
+working-tree additions were included in the existing tag.
 
 v1.0.0 is the first fully locked release of Adamantine AI Gateway as a deterministic policy-enforcement and evidence-production boundary for untrusted AI-originated work.
 
@@ -253,13 +261,50 @@ See `contracts/` for the formal repo contract documents.
 
 ## Release Status
 
-v1.0.0 remains the locked package release. V4.9-D2, V4.9-D3A, and V4.9-E are
+The existing `v1.0.0` tag points to commit
+`597db130a67ea366b052afac4e2b822ef3c03a7d`. The authenticated pre-G3 working
+tree is `42d8866dde3eee01552cc68d59b371d959c2c8e1`, 65 commits ahead of that
+tag. V4.10-G3 is documentation and regression-test work only: no package or
+runtime version bump, release publication, tag creation, or tag movement.
+
+V4.9-D2, V4.9-D3A, and V4.9-E are
 unreleased, V1-shape-preserving compatibility extensions. D3A freezes the
 existing D2/V2 hash bytes without changing them. The separate V4.9-D3B
 AdamantineOS consumer is verified, but Gateway evidence still provides
 deterministic content linkage only;
 it does not authenticate the producer, provide freshness or replay protection,
 prove honest execution, claim Rust compatibility, or grant final authority.
+
+Frozen V1 evidence remains policy-identity unbound. The separately versioned
+`AI_GATEWAY_POLICY_BINDING_V1` is carried by evidence V2, not inserted into
+V1. V1 shape preservation is not a claim that all V1 exporter inputs are
+unchanged: the from-result helper requires an exact bounded built-in dictionary
+and rejects a present `policy_binding` key. An exact-policy consumer must
+require V2 with no V1 fallback.
+
+The next independent distribution release number remains unassigned. Gateway
+does not inherit Shield's `4.0.0` version. A later release needs explicit review
+of exporter input hardening and receipt-version-dependent hashes; retaining
+`1.0.0` here does not authorize republishing the changed tree as that release.
+
+See [V4.10-G3 release status](docs/RELEASE_STATUS_V4_10_G3.md) for the version
+map, frozen-fixture identities, validation evidence, and post-commit gate.
+
+## Validation Status
+
+| Snapshot | Tests | Coverage |
+|---|---|---|
+| Pre-G3 source at `42d8866d...` | 413 passed; zero skips | 1117/1117 statements and 394/394 branches; 100% |
+| G3 candidate, including six new release-truth tests | 419 passed; zero skips | 1117/1117 statements and 394/394 branches; 100% |
+
+These are CPython 3.11.15 local results. CI uses the Python `3.11` line and
+enforces 100% statement and branch coverage. Candidate results are not evidence
+that a later GitHub commit passed: require `CI` green on the exact final G3
+commit and verify a fresh post-commit ZIP before closing G3.
+
+The standalone canonical-vector checker also passes; it is independent Python
+byte-parity evidence, not Rust, SDK, Shield signature, or live-OQS proof.
+Gateway has no dedicated native-OQS workflow and none is required for G3.
 
 ---
 
